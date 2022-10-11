@@ -13,16 +13,21 @@ for item in component_URL:
     soup = BeautifulSoup(page.content, "html.parser")
 
     #Get next page url
-    listz = []
-    next_Page = soup.find("div", class_="listpager").find("li", class_="next").find_all("a", href=True)
-    for z in next_Page:
-        listz.append(z["href"])
-    print("listz", listz)
+    listz = ["?page=1"]
     for z in listz:
-        next_URL = URL + item + z
-        print(next_URL)
-        
-    #Get the links to all the components on the current page
+        try:
+            next_Page = requests.get(URL + item + z)
+            next_Soup = BeautifulSoup(next_Page.content, "html.parser")
+            next_Results = next_Soup.find("div", class_="listpager").find("li", class_="next").find_all("a", href=True)
+            print(next_Page.url)
+            
+            for z2 in next_Results:
+                listz.append(z2["href"])
+                print("next page:", listz)
+        except:
+            pass
+
+        #Get the links to all the components on the current page
     try:
         results = soup.find("div", class_="p_name").find_all("a")
     except:
@@ -35,7 +40,8 @@ for item in component_URL:
         listy = list(dict.fromkeys(listy))
     #print(listy)
     print("curr page", page.url)
-        
+
+'''        
     #Get the text in the item pages
     for y in listy:
         item_Page = requests.get(URL + y, allow_redirects=True)
@@ -54,7 +60,7 @@ for item in component_URL:
         
         
 
-
+'''
 
 #print(results)
 '''
