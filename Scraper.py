@@ -66,9 +66,7 @@ for item in component_URL:
             else:
                 item_Smallspecs = item_Soup.find("div", class_="nameinfo").find("p").text
             item_Price = item_Soup.find("span", class_="pricetext").find("span", itemprop="price").text
-            item_Price = item_Price.replace(",", ".")
-            item_Price = item_Price.lstrip()
-
+            item_Price = float(item_Price.replace(" ", "").replace(",", ".").lstrip())
             try:
                 stripchars = results_Item.text.split("Tekniset tiedot:", 1)
             except:
@@ -80,7 +78,10 @@ for item in component_URL:
                 except:
                     print("The text could not be handled")
                     continue
-            print("Producer Name:", producer_Name, "\n Item name:", item_Name2[0], "\n Item type", item_Name2[1], "\n Item smallspecs:", item_Smallspecs, "\n Price:", item_Price)
+            try:
+                print("Manufacturer Name:", producer_Name, "\n Item name:", item_Name2[0], "\n Item type:", item_Name2[1], "\n Item smallspecs:", item_Smallspecs, "\n Price:", item_Price)
+            except IndexError:
+                print("Manufacturer Name:", producer_Name, "\n Item name:", item_Name2[0], "\n Item type:", None, "\n Item smallspecs:", item_Smallspecs, "\n Price:", item_Price)
             #print(results_Item)
         
         
