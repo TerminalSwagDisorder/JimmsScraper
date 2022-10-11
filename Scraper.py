@@ -57,9 +57,13 @@ for item in component_URL:
 
             print(item_Page)
             results_Item = item_Soup.find("div", itemprop="description").find("p")
-            producer_Name = item_Soup.find("div", class_="nameinfo").find("h1").find("span", itemprop="brand").find("span", itemprop="name").string
-            item_Name = item_Soup.find("div", class_="nameinfo").find("h1").find_all("span", itemprop="name")
-            item_Smallspecs = item_Soup.find("div", class_="nameinfo").find("p").string
+            producer_Name = item_Soup.find("div", class_="nameinfo").find("h1").find("span", itemprop="brand").find("span", itemprop="name").text
+            item_Name = item_Soup.find("div", class_="nameinfo").find("h1", class_="name").find_all("span")[2].text
+            item_Name2 = item_Name.split(",", 1)
+            item_Smallspecs = item_Soup.find("div", class_="nameinfo").find("p").text
+            item_Price = item_Soup.find("span", class_="pricetext").find("span", itemprop="price").text
+            item_Price = item_Price.replace(",", ".")
+            item_Price = item_Price.lstrip()
 
             try:
                 stripchars = results_Item.text.split("Tekniset tiedot:", 1)
@@ -72,7 +76,7 @@ for item in component_URL:
                 except:
                     print("The text could not be handled")
                     continue
-            print("Producer Name:", item_Name[0], ", Item name:", item_Name[1], ", Item smallspecs:", item_Smallspecs)
+            print("Producer Name:", producer_Name, "\n Item name:", item_Name2[0], "\n Item type", item_Name2[1], "\n Item smallspecs:", item_Smallspecs, "\n Price:", item_Price)
             #print(results_Item)
         
         
