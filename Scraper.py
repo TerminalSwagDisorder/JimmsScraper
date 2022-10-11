@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 
 URL = "https://www.jimms.fi"
 base_URL = "/fi/Product/Show/"
-component_URL = ["/fi/Product/List/000-00H/komponentit--emolevyt"]
-component_URL2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "https://www.jimms.fi/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
+component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt"]
+component_URL2 = ["/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "https://www.jimms.fi/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
 
 for item in component_URL:
     #page = requests.get(URL + item, allow_redirects=True)
@@ -28,8 +28,8 @@ for item in component_URL:
                 #print("next page:", listz)
         except:
             print("There are no more pages")
+            print("Total pages:", listz[-1])
             continue
-
         #Get the links to all the components on all pages
     for z in listz:
         page = requests.get(URL + item + z)
@@ -56,11 +56,15 @@ for item in component_URL:
             #print("item url:", item_Page.url, item_Page.history)
 
             print(item_Page)
-            results_Item = item_Soup.find("div", itemprop="description").find("p")
+            results_Item = item_Soup.find("div", itemprop="description")
             producer_Name = item_Soup.find("div", class_="nameinfo").find("h1").find("span", itemprop="brand").find("span", itemprop="name").text
             item_Name = item_Soup.find("div", class_="nameinfo").find("h1", class_="name").find_all("span")[2].text
             item_Name2 = item_Name.split(",", 1)
-            item_Smallspecs = item_Soup.find("div", class_="nameinfo").find("p").text
+            item_Smallspecs = item_Soup.find("div", class_="nameinfo").find("p")
+            if item_Smallspecs is None:
+                item_Smallspecs = None
+            else:
+                item_Smallspecs = item_Soup.find("div", class_="nameinfo").find("p").text
             item_Price = item_Soup.find("span", class_="pricetext").find("span", itemprop="price").text
             item_Price = item_Price.replace(",", ".")
             item_Price = item_Price.lstrip()
