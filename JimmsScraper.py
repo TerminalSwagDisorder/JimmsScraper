@@ -242,6 +242,118 @@ for partcategory in searchTerms:
 			print("\npartcategory =", partcategory)
 			print(partname, specsdict, partprice, "\n")
 			
+			if check_record_exists(session, single_part, part.name):
+				print("Product already exists in database, updating existing data")
+				session.query(single_part).filter(single_part.c.Name == part.name).update(
+					if single_part == "cpu":
+						{
+							"Manufacturer": specsdict.get("Manufacturer", None),
+							"Core Count": specsdict.get("Core Count", None),
+							"Performance Core Clock": specsdict.get("Performance Core Clock", None),
+							"Performance Boost Clock": specsdict.get("Performance Boost Clock", None),
+							"TDP": specsdict.get("TDP", None),
+							"Integrated Graphics": specsdict.get("Integrated Graphics", None),
+							"L3 Cache": specsdict.get("L3 Cache", None),
+							"Simultaneous Multithreading": specsdict.get("Simultaneous Multithreading", None),
+							"Includes CPU Cooler": specsdict.get("Includes CPU Cooler", None),
+							"Socket": specsdict.get("Socket", None),
+							"Price": partprice["Price"],
+							"Url": parturl["Url"],
+						}
+
+					elif single_part == "gpu":
+						{
+							"Manufacturer": specsdict.get("Manufacturer", None),
+							"Chipset": specsdict.get("Chipset", None),
+							"Core Clock": specsdict.get("Core Clock", None),
+							"Boost Clock": specsdict.get("Boost Clock", None),
+							"Memory": specsdict.get("Memory", None),
+							"Memory Interface": specsdict.get("Memory Interface", None),
+							"Memory Bandwidth": specsdict.get("Memory Bandwidth", None),
+							"CUDA Cores": specsdict.get("CUDA Cores", None),
+							"TDP": specsdict.get("TDP", None),
+							"Output Ports": specsdict.get("Output Ports", None),
+							"Price": partprice["Price"],
+							"Url": parturl["Url"],
+						}
+					elif single_part == "cooler":
+						{
+							"Manufacturer": specsdict.get("Manufacturer", None),
+							"Fan RPM": specsdict.get("Fan RPM", None),
+							"Noise Level": specsdict.get("Noise Level", None),
+							"Color": specsdict.get("Color", None),
+							"Height": specsdict.get("Height", None),
+							"Water Cooled": specsdict.get("Water Cooled", None),
+							"Fanless": specsdict.get("Fanless", None),
+							"Price": partprice["Price"],
+							"Url": parturl["Url"],
+						}
+					elif single_part == "motherboard":
+						{
+							"Manufacturer": specsdict.get("Manufacturer", None),
+							"Form Factor": specsdict.get("Form Factor", None),
+							"Socket": specsdict.get("Socket", None),
+							"Memory Slots": specsdict.get("Memory Slots", None),
+							"Max Memory": specsdict.get("Max Memory", None),
+							"Onboard Ethernet": specsdict.get("Onboard Ethernet", None),
+							"Onboard Graphics": specsdict.get("Onboard Graphics", None),
+							"M.2 Slots": specsdict.get("M.2 Slots", None),
+							"SATA Ports": specsdict.get("SATA Ports", None),
+							"USB 3.0 Ports": specsdict.get("USB 3.0 Ports", None),
+							"Price": partprice["Price"],
+							"Url": parturl["Url"],
+						}
+					elif single_part == "memory":
+						{
+							"Manufacturer": specsdict.get("Manufacturer", None),
+							"Speed": specsdict.get("Speed", None),
+							"Memory Type": specsdict.get("Memory Type", None),
+							"Capacity": specsdict.get("Capacity", None),
+							"Cas Latency": specsdict.get("Cas Latency", None),
+							"Timing": specsdict.get("Timing", None),
+							"Voltage": specsdict.get("Voltage", None),
+							"Price": partprice["Price"],
+							"Url": parturl["Url"]
+						}
+					elif single_part == "storage":
+						{
+							"Manufacturer": specsdict.get("Manufacturer", None),
+							"Type": specsdict.get("Type", None),
+							"Capacity": specsdict.get("Capacity", None),
+							"Form Factor": specsdict.get("Form Factor", None),
+							"Interface": specsdict.get("Interface", None),
+							"Cache": specsdict.get("Cache", None),
+							"Price": partprice["Price"],
+							"Url": parturl["Url"],
+						}
+					elif single_part == "psu":
+						{
+							"Manufacturer": specsdict.get("Manufacturer", None),
+							"Wattage": specsdict.get("Wattage", None),
+							"Efficiency Rating": specsdict.get("Efficiency Rating", None),
+							"Modular": specsdict.get("Modular", None),
+							"Price": partprice["Price"],
+							"Url": parturl["Url"],
+						}
+					elif single_part == "case":
+						{
+							"Manufacturer": specsdict.get("Manufacturer", None),
+							"Type": specsdict.get("Type", None),
+							"Color": specsdict.get("Color", None),
+							"Power Supply": specsdict.get("Power Supply", None),
+							"Side Panel Window": specsdict.get("Side Panel Window", None),
+							"Power Supply Shroud": specsdict.get("Power Supply Shroud", None),
+							"Motherboard Form Factor": specsdict.get("Motherboard Form Factor", None),
+							"Maximum Video Card Length": specsdict.get("Maximum Video Card Length", None),
+							"Volume": specsdict.get("Volume", None),
+							"Dimensions": specsdict.get("Dimensions", None),
+							"Price": partprice["Price"],
+							"Url": parturl["Url"],
+						}
+					
+				)
+			else:
+			
 			#Insert into database
 			if partcategory == "processor amd ryzen" or partcategory == "processor intel celeron" or partcategory == "processor intel pentium" or partcategory == "processor intel pentium" or partcategory == "processor intel core i3" or partcategory == "processor intel core i5" or partcategory == "processor intel core i7" or partcategory == "processor intel core i9":
 				i = insert(cpu)
