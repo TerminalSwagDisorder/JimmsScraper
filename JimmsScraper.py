@@ -185,11 +185,48 @@ print("starting extraction\n")
 #Primary part categories are "processsor", "video card", "cpu cooler", "motherboard", "memory", "internal hard drive", "solid state drive", "power supply", "case"
 searchTerms = ["video card gtx", "video card rtx", "video card radeon", "processor amd ryzen", "processor intel celeron", "processor intel pentium", "processor intel core i3", "processor intel core i5", "processor intel core i7", "processor intel core i9", "cpu cooler", "motherboard", "memory ddr4", "memory ddr5", "memory ddr3", "internal hard drive",  "solid state drive 2.5", "solid state drive m.2", "power supply certified", "atx case", "itx case", "htpc case"]
 
-def check_record_exists(session, single_part, name):
+def check_record_exists(session, main_parts, name):
 	for single_part in main_parts:
-		query = session.query(single_part).filter(single_part.c.Name == name).first()
-		return True if query else False
-
+		if single_part == "cpu":
+			query = session.query(cpu).filter(cpu.c.Name == name).first()
+			if query:
+				return True
+		
+		elif single_part == "gpu":
+			query = session.query(gpu).filter(gpu.c.Name == name).first()
+			if query:
+				return True
+			
+		elif single_part == "cooler":
+			query = session.query(cooler).filter(cooler.c.Name == name).first()
+			if query:
+				return True
+			
+		elif single_part == "motherboard":
+			query = session.query(motherboard).filter(motherboard.c.Name == name).first()
+			if query:
+				return True
+			
+		elif single_part == "memory":
+			query = session.query(memory).filter(memory.c.Name == name).first()
+			if query:
+				return True
+			
+		elif single_part == "storage":
+			query = session.query(storage).filter(storage.c.Name == name).first()
+			if query:
+				return True
+			
+		elif single_part == "psu":
+			query = session.query(psu).filter(psu.c.Name == name).first()
+			if query:
+				return True
+			
+		elif single_part == "case":
+			query = session.query(case).filter(case.c.Name == name).first()
+			if query:
+				return True
+			
 #Extract data and insert to database
 for partcategory in searchTerms:
 	print("\nstarting", partcategory)
@@ -242,11 +279,8 @@ for partcategory in searchTerms:
 			print("\npartcategory =", partcategory)
 			print(partname, specsdict, partprice, "\n")
 			
-			if check_record_exists(session, single_part, part.name):
-				print("Product already exists in database, updating existing data")
-				session.query(single_part).filter(single_part.c.Name == part.name).update(
-					if single_part == "cpu":
-						{
+			# Dictionaries for upsert
+			cpu_dict = {
 							"Manufacturer": specsdict.get("Manufacturer", None),
 							"Core Count": specsdict.get("Core Count", None),
 							"Performance Core Clock": specsdict.get("Performance Core Clock", None),
@@ -260,9 +294,7 @@ for partcategory in searchTerms:
 							"Price": partprice["Price"],
 							"Url": parturl["Url"],
 						}
-
-					elif single_part == "gpu":
-						{
+			gpu_dict = {
 							"Manufacturer": specsdict.get("Manufacturer", None),
 							"Chipset": specsdict.get("Chipset", None),
 							"Core Clock": specsdict.get("Core Clock", None),
@@ -276,8 +308,7 @@ for partcategory in searchTerms:
 							"Price": partprice["Price"],
 							"Url": parturl["Url"],
 						}
-					elif single_part == "cooler":
-						{
+			cooler_dict = {
 							"Manufacturer": specsdict.get("Manufacturer", None),
 							"Fan RPM": specsdict.get("Fan RPM", None),
 							"Noise Level": specsdict.get("Noise Level", None),
@@ -288,8 +319,7 @@ for partcategory in searchTerms:
 							"Price": partprice["Price"],
 							"Url": parturl["Url"],
 						}
-					elif single_part == "motherboard":
-						{
+			motherboard_dict = {
 							"Manufacturer": specsdict.get("Manufacturer", None),
 							"Form Factor": specsdict.get("Form Factor", None),
 							"Socket": specsdict.get("Socket", None),
@@ -303,8 +333,7 @@ for partcategory in searchTerms:
 							"Price": partprice["Price"],
 							"Url": parturl["Url"],
 						}
-					elif single_part == "memory":
-						{
+			memory_dict = {
 							"Manufacturer": specsdict.get("Manufacturer", None),
 							"Speed": specsdict.get("Speed", None),
 							"Memory Type": specsdict.get("Memory Type", None),
@@ -315,8 +344,7 @@ for partcategory in searchTerms:
 							"Price": partprice["Price"],
 							"Url": parturl["Url"]
 						}
-					elif single_part == "storage":
-						{
+			storage_dict = {
 							"Manufacturer": specsdict.get("Manufacturer", None),
 							"Type": specsdict.get("Type", None),
 							"Capacity": specsdict.get("Capacity", None),
@@ -326,8 +354,7 @@ for partcategory in searchTerms:
 							"Price": partprice["Price"],
 							"Url": parturl["Url"],
 						}
-					elif single_part == "psu":
-						{
+			psu_dict = {
 							"Manufacturer": specsdict.get("Manufacturer", None),
 							"Wattage": specsdict.get("Wattage", None),
 							"Efficiency Rating": specsdict.get("Efficiency Rating", None),
@@ -335,8 +362,7 @@ for partcategory in searchTerms:
 							"Price": partprice["Price"],
 							"Url": parturl["Url"],
 						}
-					elif single_part == "case":
-						{
+			case_dict = {
 							"Manufacturer": specsdict.get("Manufacturer", None),
 							"Type": specsdict.get("Type", None),
 							"Color": specsdict.get("Color", None),
@@ -350,42 +376,69 @@ for partcategory in searchTerms:
 							"Price": partprice["Price"],
 							"Url": parturl["Url"],
 						}
-					
-				)
+			
+			# Update into database
+			if check_record_exists(session, main_parts, part.name):
+				for single_part in main_parts:
+					print("Product already exists in database, updating existing data")
+					if single_part == "cpu":
+						session.query(cpu).filter(cpu.c.Name == part.name).update(cpu_dict)
+
+					elif single_part == "gpu":
+						session.query(gpu).filter(gpu.c.Name == part.name).update(gpu_dict)
+
+					elif single_part == "cooler":
+						session.query(cooler).filter(cooler.c.Name == part.name).update(cooler_dict)
+
+					elif single_part == "motherboard":
+						session.query(motherboard).filter(motherboard.c.Name == part.name).update(motherboard_dict)
+
+					elif single_part == "memory":
+						session.query(memory).filter(memory.c.Name == part.name).update(memory_dict)
+
+					elif single_part == "storage":
+						session.query(storage).filter(storage.c.Name == part.name).update(storage_dict)
+
+					elif single_part == "psu":
+						session.query(psu).filter(psu.c.Name == part.name).update(psu_dict)
+
+					elif single_part == "case":
+						session.query(case).filter(case.c.Name == part.name).update(case_dict)
+
 			else:
-			
+
 			#Insert into database
-			if partcategory == "processor amd ryzen" or partcategory == "processor intel celeron" or partcategory == "processor intel pentium" or partcategory == "processor intel pentium" or partcategory == "processor intel core i3" or partcategory == "processor intel core i5" or partcategory == "processor intel core i7" or partcategory == "processor intel core i9":
-				i = insert(cpu)
+				if partcategory == "processor amd ryzen" or partcategory == "processor intel celeron" or partcategory == "processor intel pentium" or partcategory == "processor intel pentium" or partcategory == "processor intel core i3" or partcategory == "processor intel core i5" or partcategory == "processor intel core i7" or partcategory == "processor intel core i9":
+					i = insert(cpu)
 
-			elif partcategory == "video card radeon" or partcategory == "video card gtx" or partcategory == "video card rtx":
-				i = insert(gpu)
+				elif partcategory == "video card radeon" or partcategory == "video card gtx" or partcategory == "video card rtx":
+					i = insert(gpu)
 
-			elif partcategory == "cpu cooler":
-				i = insert(cooler)	
+				elif partcategory == "cpu cooler":
+					i = insert(cooler)	
 
-			elif partcategory == "motherboard":
-				i = insert(motherboard)   
+				elif partcategory == "motherboard":
+					i = insert(motherboard)   
 
-			elif partcategory == "memory ddr5" or partcategory == "memory ddr4" or partcategory == "memory ddr3":
-				i = insert(memory) 
+				elif partcategory == "memory ddr5" or partcategory == "memory ddr4" or partcategory == "memory ddr3":
+					i = insert(memory) 
 
-			elif partcategory == "internal hard drive" or partcategory == "solid state drive 2.5" or partcategory == "solid state drive m.2":
-				i = insert(storage)
+				elif partcategory == "internal hard drive" or partcategory == "solid state drive 2.5" or partcategory == "solid state drive m.2":
+					i = insert(storage)
 
-			elif partcategory == "power supply certified":
-				i = insert(psu)
+				elif partcategory == "power supply certified":
+					i = insert(psu)
 
-			elif partcategory == "htpc case" or partcategory == "itx case" or partcategory == "atx case":
-				i = insert(case)
+				elif partcategory == "htpc case" or partcategory == "itx case" or partcategory == "atx case":
+					i = insert(case)
 
-			i = i.values(partname)
-			i = i.values(specsdict) 
-			i = i.values(partprice)  
-			i = i.values(parturl)
-			session.execute(i)
-			session.commit()	 
-			
+				i = i.values(partname)
+				i = i.values(specsdict) 
+				i = i.values(partprice)  
+				i = i.values(parturl)
+				session.execute(i)
+				session.commit()	 
+
 		#Wait here again just in case
 		#sleep(4)
 		sleep(5)
