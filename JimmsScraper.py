@@ -18,7 +18,7 @@ finPath = dPath + "\\database"
 
 #Create database folder if it does not exist
 if not os.path.exists(finPath):
-    os.makedirs(finPath)
+	os.makedirs(finPath)
 
 engine = create_engine("sqlite:///" + finPath + "\\pcbuildwebsite_db.db", echo=True, pool_pre_ping=True)
 Session = sessionmaker(bind=engine)
@@ -28,7 +28,9 @@ session = Session(bind=engine)
 #Define metadata information
 metadata = MetaData(bind=engine)
 
-#Create table in database       
+main_parts = ["cpu", "gpu", "cooler", "motherboard", "memory", "storage", "psu", "case"]
+
+#Create table in database	   
 cpu = Table("cpu", metadata,
 	Column("id", INTEGER, primary_key=True, autoincrement=True),
 	Column("Name", TEXT),
@@ -39,7 +41,7 @@ cpu = Table("cpu", metadata,
 	Column("TDP", TEXT),
 	Column("Integrated Graphics", TEXT),
 	Column("L3 Cache", TEXT),
-    Column("Simultaneous Multithreading", TEXT),
+	Column("Simultaneous Multithreading", TEXT),
 	Column("Includes CPU Cooler", TEXT),
 	Column("Socket", TEXT),
 	Column("Price", TEXT),
@@ -54,7 +56,7 @@ gpu = Table("gpu", metadata,
 	Column("Memory Type", TEXT),
 	Column("Core Clock", TEXT),
 	Column("Boost Clock", TEXT),
-    Column("Effective Memory Clock", TEXT),
+	Column("Effective Memory Clock", TEXT),
 	Column("Interface", TEXT),
 	Column("Color", TEXT),
 	Column("Length", TEXT),
@@ -72,7 +74,7 @@ cooler = Table("cpu cooler", metadata,
 	Column("Noise Level", TEXT),
 	Column("Color", TEXT),
 	Column("Height", TEXT),
-    Column("Water Cooled", TEXT),
+	Column("Water Cooled", TEXT),
 	Column("Fanless", TEXT),
 	Column("Price", TEXT),
 	Column("Url", TEXT)
@@ -86,7 +88,7 @@ motherboard = Table("motherboard", metadata,
 	Column("Chipset", TEXT),
 	Column("Memory Max", TEXT),
 	Column("Memory Type", TEXT),
-    Column("Memory Slots", TEXT),
+	Column("Memory Slots", TEXT),
 	Column("Color", TEXT),
 	Column("PCIe x16 Slots", TEXT),
 	Column("PCIe x8 Slots", TEXT),
@@ -113,7 +115,7 @@ memory = Table("memory", metadata,
 	Column("Color", TEXT),
 	Column("CAS Latency", TEXT),
 	Column("Voltage", TEXT),
-    Column("ECC / Registered", TEXT),
+	Column("ECC / Registered", TEXT),
 	Column("Heat Spreader", TEXT),
 	Column("Price", TEXT),
 	Column("Url", TEXT)
@@ -139,7 +141,7 @@ psu = Table("psu", metadata,
 	Column("Efficiency Rating", TEXT),
 	Column("Wattage", TEXT),
 	Column("Length", TEXT),
-    Column("Modular", TEXT),
+	Column("Modular", TEXT),
 	Column("Color", TEXT),
 	Column("Type", TEXT),
 	Column("Fanless", TEXT),
@@ -162,7 +164,7 @@ case = Table("case", metadata,
 	Column("Color", TEXT),
 	Column("Power Supply", TEXT),
 	Column("Side Panel Window", TEXT),
-    Column("Power Supply Shroud", TEXT),
+	Column("Power Supply Shroud", TEXT),
 	Column("Motherboard Form Factor", TEXT),
 	Column("Maximum Video Card Length", TEXT),
 	Column("Volume", TEXT),
@@ -179,130 +181,93 @@ print("starting extraction\n")
 #Primary part categories are "processsor", "video card", "cpu cooler", "motherboard", "memory", "internal hard drive", "solid state drive", "power supply", "case"
 searchTerms = ["video card gtx", "video card rtx", "video card radeon", "processor amd ryzen", "processor intel celeron", "processor intel pentium", "processor intel core i3", "processor intel core i5", "processor intel core i7", "processor intel core i9", "cpu cooler", "motherboard", "memory ddr4", "memory ddr5", "memory ddr3", "internal hard drive",  "solid state drive 2.5", "solid state drive m.2", "power supply certified", "atx case", "itx case", "htpc case"]
 
+def check_record_exists(session, single_part, name):
+	for single_part in main_parts:
+		query = session.query(single_part).filter(single_part.c.Name == name).first()
+		return True if query else False
+
 #Extract data and insert to database
 for partcategory in searchTerms:
-    print("\nstarting", partcategory)
-    #A limit of 500 or below is ideal to try to not be rate limited by PCPP
-    parts = pcpartpicker.part_search(partcategory, limit=500, region="fi")
-    
-    for part in parts:
-        print("debug 1")
-        #if float(part.price.strip("€")) >= 1:
-        if not part.price is None:
-            validpart = pcpartpicker.fetch_product(part.url)
+	print("\nstarting", partcategory)
+	#A limit of 500 or below is ideal to try to not be rate limited by PCPP
+	parts = pcpartpicker.part_search(partcategory, limit=500, region="fi")
+		
+	for part in parts:
+		print("debug 1")
+		#if float(part.price.strip("€")) >= 1:
+		if not part.price is None:
+			validpart = pcpartpicker.fetch_product(part.url)
 
-            print("debug 2")
-            #Need to wait a bit to also not be rate limited by PCPP
-            #sleep(1)
-            sleep(3)
-            
-            partname = {
-                "Name" : part.name,
-            }
-            partprice = {
-                "Price" : part.price,
-            }
-            parturl = {
-                "Url" : part.url,
-            }
-            
-            #Convert specs into only dict
-            vs = [{new_k : new_val[r] for new_k, new_val in validpart.specs.items()} for r in range(1)]
-            specsdict = {
-                
-            }
-            
-            for key, value in vs[0].items():
-                specsdict[key] = value
-            
-            #Delete unecessary dict columns    
-            delcol = ["Efficiency L1 Cache", "Efficiency L2 Cache", "Part #", "Series", "Microarchitecture", "Core Family", "Maximum Supported Memory", "ECC Support", "Packaging", "Performance L1 Cache", "Performance L2 Cache", "Lithography", "Frame Sync", "External Power", "HDMI Outputs", "DVI-D Dual Link Outputs", "DisplayPort Outputs", "CPU Socket", "Memory Speed", "PCI Slots", "Mini-PCIe Slots", "Half Mini-PCIe Slots", "Mini-PCIe / mSATA Slots", "mSATA Slots", "USB 2.0 Headers (Single Port)", "Supports ECC", "Price / GB", "First Word Latency", "Timing", "Model", "Front Panel USB", "Drive Bays", "Expansion Slots", "SLI/CrossFire", "Onboard Video", "Output", "HDMI 2.0b Outputs", "DisplayPort 1.4 Outputs", "DisplayPort 1.4a Outputs", "HDMI 2.1 Outputs", "VirtualLink Outputs", "Bearing", "SSD NAND Flash Type", "Power Loss Protection", "SSD Controller", "Efficiency", "Includes Cooler"]
-                        
-            for column in delcol:
-                try:
-                    specsdict.pop(column)
-                except:
-                    continue
-                    
-            print("\npartcategory =", partcategory)
-            print(partname, specsdict, partprice, "\n")
-            
-            #Insert into database
-            if partcategory == "processor amd ryzen" :
-                i = insert(cpu)
-                
-            elif partcategory == "processor intel celeron":
-                i = insert(cpu) 
-                
-            elif partcategory == "processor intel pentium":
-                i = insert(cpu)
-                
-            elif partcategory == "processor intel core i3":
-                i = insert(cpu)
-                
-            elif partcategory == "processor intel core i5":
-                i = insert(cpu)
-                
-            elif partcategory == "processor intel core i7":
-                i = insert(cpu)
-                
-            elif partcategory == "processor intel core i9":
-                i = insert(cpu)
-                
-            elif partcategory == "video card gtx":
-                i = insert(gpu)
-                
-            elif partcategory == "video card rtx":
-                i = insert(gpu)
-                
-            elif partcategory == "video card radeon":
-                i = insert(gpu)
-                
-            elif partcategory == "cpu cooler":
-                i = insert(cooler)    
+			print("debug 2")
+			#Need to wait a bit to also not be rate limited by PCPP
+			#sleep(1)
+			sleep(3)
 
-            elif partcategory == "motherboard":
-                i = insert(motherboard)   
+			partname = {
+				"Name" : part.name,
+			}
+			partprice = {
+				"Price" : part.price,
+			}
+			parturl = {
+				"Url" : part.url,
+			}
 
-            elif partcategory == "memory ddr4":
-                i = insert(memory) 
-                
-            elif partcategory == "memory ddr5":
-                i = insert(memory) 
-                
-            elif partcategory == "memory ddr3":
-                i = insert(memory) 
+			#Convert specs into only dict
+			vs = [{new_k : new_val[r] for new_k, new_val in validpart.specs.items()} for r in range(1)]
+			specsdict = {
 
-            elif partcategory == "internal hard drive":
-                i = insert(storage)
-                
-            elif partcategory == "solid state drive 2.5":
-                i = insert(storage)
-                
-            elif partcategory == "solid state drive m.2":
-                i = insert(storage)
-                
-            elif partcategory == "power supply certified":
-                i = insert(psu)
-                
-            elif partcategory == "atx case":
-                i = insert(case)
-                
-            elif partcategory == "itx case":
-                i = insert(case)
-                
-            elif partcategory == "htpc case":
-                i = insert(case)
-                
-            i = i.values(partname)
-            i = i.values(specsdict) 
-            i = i.values(partprice)  
-            i = i.values(parturl)
-            session.execute(i)
-            session.commit()     
-            
-        #Wait here again just in case
-        #sleep(4)
-        sleep(8)
-        
+			}
+
+			for key, value in vs[0].items():
+				specsdict[key] = value
+
+			#Delete unecessary dict columns	
+			delcol = ["Efficiency L1 Cache", "Efficiency L2 Cache", "Part #", "Series", "Microarchitecture", "Core Family", "Maximum Supported Memory", "ECC Support", "Packaging", "Performance L1 Cache", "Performance L2 Cache", "Lithography", "Frame Sync", "External Power", "HDMI Outputs", "DVI-D Dual Link Outputs", "DisplayPort Outputs", "CPU Socket", "Memory Speed", "PCI Slots", "Mini-PCIe Slots", "Half Mini-PCIe Slots", "Mini-PCIe / mSATA Slots", "mSATA Slots", "USB 2.0 Headers (Single Port)", "Supports ECC", "Price / GB", "First Word Latency", "Timing", "Model", "Front Panel USB", "Drive Bays", "Expansion Slots", "SLI/CrossFire", "Onboard Video", "Output", "HDMI 2.0b Outputs", "DisplayPort 1.4 Outputs", "DisplayPort 1.4a Outputs", "HDMI 2.1 Outputs", "VirtualLink Outputs", "Bearing", "SSD NAND Flash Type", "Power Loss Protection", "SSD Controller", "Efficiency", "Includes Cooler", "Total Slot Width", "Case Expansion Slot Width"]
+
+			for column in delcol:
+				try:
+					specsdict.pop(column)
+				except:
+					continue
+
+			print("\npartcategory =", partcategory)
+			print(partname, specsdict, partprice, "\n")
+			
+			#Insert into database
+			if partcategory == "processor amd ryzen" or partcategory == "processor intel celeron" or partcategory == "processor intel pentium" or partcategory == "processor intel pentium" or partcategory == "processor intel core i3" or partcategory == "processor intel core i5" or partcategory == "processor intel core i7" or partcategory == "processor intel core i9":
+				i = insert(cpu)
+
+			elif partcategory == "video card radeon" or partcategory == "video card gtx" or partcategory == "video card rtx":
+				i = insert(gpu)
+
+			elif partcategory == "cpu cooler":
+				i = insert(cooler)	
+
+			elif partcategory == "motherboard":
+				i = insert(motherboard)   
+
+			elif partcategory == "memory ddr5" or partcategory == "memory ddr4" or partcategory == "memory ddr3":
+				i = insert(memory) 
+
+			elif partcategory == "internal hard drive" or partcategory == "solid state drive 2.5" or partcategory == "solid state drive m.2":
+				i = insert(storage)
+
+			elif partcategory == "power supply certified":
+				i = insert(psu)
+
+			elif partcategory == "htpc case" or partcategory == "itx case" or partcategory == "atx case":
+				i = insert(case)
+
+			i = i.values(partname)
+			i = i.values(specsdict) 
+			i = i.values(partprice)  
+			i = i.values(parturl)
+			session.execute(i)
+			session.commit()	 
+			
+		#Wait here again just in case
+		#sleep(4)
+		sleep(5)
+		
 print("\n\nCompleted")
