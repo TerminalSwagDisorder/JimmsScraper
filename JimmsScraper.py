@@ -174,7 +174,11 @@ case = Table("case", metadata,
 )
 metadata.create_all(engine)
 
-pcpartpicker = Scraper()
+cookie = ""
+user_agent = ""
+
+pcpartpicker = Scraper(headers={ "cookie": cookie, "user-agent": user_agent })
+
 print("starting extraction\n")
 
 #Add anything you want to find from https://fi.pcpartpicker.com/search/
@@ -190,7 +194,11 @@ def check_record_exists(session, single_part, name):
 for partcategory in searchTerms:
 	print("\nstarting", partcategory)
 	#A limit of 500 or below is ideal to try to not be rate limited by PCPP
-	parts = pcpartpicker.part_search(partcategory, limit=500, region="fi")
+	try:
+		parts = pcpartpicker.part_search(partcategory, limit=500, region="fi")
+	except AttributeError:
+		print("\nError: The scraping has failed, most likely due to CloudFlare verification.\nAdding your own cookie and user-agent (user_agent) from your browser may resolve this issue.\nIf the issue persists after adding your cookie and user-agent then waiting might resolve the issue.")
+		break
 		
 	for part in parts:
 		print("debug 1")
