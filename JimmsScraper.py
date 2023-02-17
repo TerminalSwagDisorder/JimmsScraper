@@ -16,7 +16,7 @@ fPath = os.path.abspath(os.path.realpath(__file__))
 dPath = os.path.dirname(fPath)
 finPath = dPath + "\\database"
 
-#Create database folder if it does not exist
+# Create database folder if it does not exist
 if not os.path.exists(finPath):
 	os.makedirs(finPath)
 
@@ -25,12 +25,12 @@ Session = sessionmaker(bind=engine)
 Session.configure(bind=engine)
 session = Session(bind=engine)
 
-#Define metadata information
+# Define metadata information
 metadata = MetaData(bind=engine)
 
 main_parts = ["cpu", "gpu", "cooler", "motherboard", "memory", "storage", "psu", "case"]
 
-#Create table in database	   
+# Create table in database	   
 cpu = Table("cpu", metadata,
 	Column("id", INTEGER, primary_key=True, autoincrement=True),
 	Column("Name", TEXT),
@@ -181,8 +181,8 @@ pcpartpicker = Scraper(headers={ "cookie": cookie, "user-agent": user_agent })
 
 print("starting extraction\n")
 
-#Add anything you want to find from https://fi.pcpartpicker.com/search/
-#Primary part categories are "processsor", "video card", "cpu cooler", "motherboard", "memory", "internal hard drive", "solid state drive", "power supply", "case"
+# Add anything you want to find from https://fi.pcpartpicker.com/search/
+# Primary part categories are "processsor", "video card", "cpu cooler", "motherboard", "memory", "internal hard drive", "solid state drive", "power supply", "case"
 searchTerms = ["video card gtx", "video card rtx", "video card radeon", "processor amd ryzen", "processor intel celeron", "processor intel pentium", "processor intel core i3", "processor intel core i5", "processor intel core i7", "processor intel core i9", "cpu cooler", "motherboard", "memory ddr4", "memory ddr5", "memory ddr3", "internal hard drive",  "solid state drive 2.5", "solid state drive m.2", "power supply certified", "atx case", "itx case", "htpc case"]
 
 def check_record_exists(session, main_parts, name):
@@ -227,10 +227,10 @@ def check_record_exists(session, main_parts, name):
 			if query:
 				return True
 			
-#Extract data and insert to database
+# Extract data and insert to database
 for partcategory in searchTerms:
 	print("\nstarting", partcategory)
-	#A limit of 500 or below is ideal to try to not be rate limited by PCPP
+	# A limit of 500 or below is ideal to try to not be rate limited by PCPP
 	try:
 		parts = pcpartpicker.part_search(partcategory, limit=500, region="fi")
 	except AttributeError:
@@ -239,13 +239,13 @@ for partcategory in searchTerms:
 		
 	for part in parts:
 		print("debug 1")
-		#if float(part.price.strip("€")) >= 1:
+		# if float(part.price.strip("€")) >= 1:
 		if not part.price is None:
 			validpart = pcpartpicker.fetch_product(part.url)
 
 			print("debug 2")
-			#Need to wait a bit to also not be rate limited by PCPP
-			#sleep(1)
+			# Need to wait a bit to also not be rate limited by PCPP
+			# sleep(1)
 			sleep(3)
 
 			partname = {
@@ -258,7 +258,7 @@ for partcategory in searchTerms:
 				"Url" : part.url,
 			}
 
-			#Convert specs into only dict
+			# Convert specs into only dict
 			vs = [{new_k : new_val[r] for new_k, new_val in validpart.specs.items()} for r in range(1)]
 			specsdict = {
 
@@ -267,8 +267,8 @@ for partcategory in searchTerms:
 			for key, value in vs[0].items():
 				specsdict[key] = value
 
-			#Delete unecessary dict columns	
-			delcol = ["Efficiency L1 Cache", "Efficiency L2 Cache", "Part #", "Series", "Microarchitecture", "Core Family", "Maximum Supported Memory", "ECC Support", "Packaging", "Performance L1 Cache", "Performance L2 Cache", "Lithography", "Frame Sync", "External Power", "HDMI Outputs", "DVI-D Dual Link Outputs", "DisplayPort Outputs", "CPU Socket", "Memory Speed", "PCI Slots", "Mini-PCIe Slots", "Half Mini-PCIe Slots", "Mini-PCIe / mSATA Slots", "mSATA Slots", "USB 2.0 Headers (Single Port)", "Supports ECC", "Price / GB", "First Word Latency", "Timing", "Model", "Front Panel USB", "Drive Bays", "Expansion Slots", "SLI/CrossFire", "Onboard Video", "Output", "HDMI 2.0b Outputs", "DisplayPort 1.4 Outputs", "DisplayPort 1.4a Outputs", "HDMI 2.1 Outputs", "VirtualLink Outputs", "Bearing", "SSD NAND Flash Type", "Power Loss Protection", "SSD Controller", "Efficiency", "Includes Cooler", "Total Slot Width", "Case Expansion Slot Width"]
+			# Delete unecessary dict columns	
+			delcol = ["Efficiency L1 Cache", "Efficiency L2 Cache", "Part # ", "Series", "Microarchitecture", "Core Family", "Maximum Supported Memory", "ECC Support", "Packaging", "Performance L1 Cache", "Performance L2 Cache", "Lithography", "Frame Sync", "External Power", "HDMI Outputs", "DVI-D Dual Link Outputs", "DisplayPort Outputs", "CPU Socket", "Memory Speed", "PCI Slots", "Mini-PCIe Slots", "Half Mini-PCIe Slots", "Mini-PCIe / mSATA Slots", "mSATA Slots", "USB 2.0 Headers (Single Port)", "Supports ECC", "Price / GB", "First Word Latency", "Timing", "Model", "Front Panel USB", "Drive Bays", "Expansion Slots", "SLI/CrossFire", "Onboard Video", "Output", "HDMI 2.0b Outputs", "DisplayPort 1.4 Outputs", "DisplayPort 1.4a Outputs", "HDMI 2.1 Outputs", "VirtualLink Outputs", "Bearing", "SSD NAND Flash Type", "Power Loss Protection", "SSD Controller", "Efficiency", "Includes Cooler", "Total Slot Width", "Case Expansion Slot Width"]
 
 			for column in delcol:
 				try:
@@ -407,7 +407,7 @@ for partcategory in searchTerms:
 
 			else:
 
-			#Insert into database
+			# Insert into database
 				if partcategory == "processor amd ryzen" or partcategory == "processor intel celeron" or partcategory == "processor intel pentium" or partcategory == "processor intel pentium" or partcategory == "processor intel core i3" or partcategory == "processor intel core i5" or partcategory == "processor intel core i7" or partcategory == "processor intel core i9":
 					i = insert(cpu)
 
@@ -439,8 +439,8 @@ for partcategory in searchTerms:
 				session.execute(i)
 				session.commit()	 
 
-		#Wait here again just in case
-		#sleep(4)
+		# Wait here again just in case
+		# sleep(4)
 		sleep(5)
 		
 print("\n\nCompleted")
