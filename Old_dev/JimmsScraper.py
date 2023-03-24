@@ -174,8 +174,8 @@ case = Table("case", metadata,
 )
 metadata.create_all(engine)
 
-cookie = ""
-user_agent = ""
+cookie = "xcsrftoken=EFfIzI0iN72Gcs1uNUQg0tF7i5q8GvhZLWX8i5CVGAe7OOAeu9q6uMWVTJmDPb6F; xgdpr-consent=allow; cf_chl_2=a48bb399a3e3c93; cf_clearance=DKR.1AeYMvNSSTcncxq7dvTrD36IwOqsN4UT89h.IGw-1677567188-0-250"
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
 
 pcpartpicker = Scraper(headers={ "cookie": cookie, "user-agent": user_agent })
 
