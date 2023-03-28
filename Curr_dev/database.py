@@ -33,37 +33,43 @@ Base = declarative_base()
 # Create table in database	 
 class UniversalComponents(Base):
 	__abstract__ = True
-	ID = Column(Integer, primary_key=True, autoincrement=True)
-	Name = Column(Text)
-	Manufacturer = Column(Text)
-	Price = Column(Text)
-	Url = Column(Text)
+	ID = Column(INTEGER, primary_key=True, autoincrement=True)
+	Name = Column(TEXT)
+	Manufacturer = Column(TEXT)
+	Price = Column(TEXT)
+	Url = Column(TEXT)
 
-class CPU(Base):
-	__tablename__ = 'cpu',
+	__tablename__ = 'universal_components'
+	__mapper_args__ = {
+		'polymorphic_identity': 'universal_components',
+		'concrete': True
+	}
 
-	Core_Count = Column("Core Count", text),
-	Thread_Count = Column("Thread Count", text),
-	Performance_Base_Clock = Column("Base Clock", text),
-	Performance_Boost_Clock = Column("Boost Clock", text),
-	L3_Cache = Column("L3 Cache", text),
-	Socket = Column("Socket", text),
-	PCIe_Ver = Column("PCie Version", text),
-	Includes_CPU_Cooler = Column("Cpu Cooler", text),
-	TDP = Column("TDP", text),
-	Integrated_Graphics = Column("Integrated GPU", text)
+class CPU(UniversalComponents):
+	__tablename__ = 'cpu'
+
+	Core_Count = Column("Core Count", TEXT)
+	Thread_Count = Column("Thread Count", TEXT)
+	Performance_Base_Clock = Column("Base Clock", TEXT)
+	Performance_Boost_Clock = Column("Boost Clock", TEXT)
+	L3_Cache = Column("L3 Cache", TEXT)
+	Socket = Column("Socket", TEXT)
+	PCIe_Ver = Column("PCie Version", TEXT)
+	Includes_CPU_Cooler = Column("Cpu Cooler", TEXT)
+	TDP = Column("TDP", TEXT)
+	Integrated_Graphics = Column("Integrated GPU", TEXT)
 
 class PSU(UniversalComponents):
 	__tablename__ = 'psu'
-	is_ATX12V = Column("is_ATX12V", Text)
-	Dimensions = Column("Dimensions", Text)
-	
+	is_ATX12V = Column("is_ATX12V", TEXT)
+	Dimensions = Column("Dimensions", TEXT)
+
 class Case(UniversalComponents):
 	__tablename__ = 'case'
-	Color = Column("Color", Text)
-	Size = Column("Size", Text)
-	Materials = Column("Materials", Text)
-	Compatibility = Column("Compatibility", Text)
+	Color = Column("Color", TEXT)
+	Size = Column("Size", TEXT)
+	Materials = Column("Materials", TEXT)
+	Compatibility = Column("Compatibility", TEXT)
 
 Base.metadata.create_all(engine)
 
