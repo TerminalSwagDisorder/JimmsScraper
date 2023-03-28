@@ -9,7 +9,6 @@ from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import ColumnClause
 from sqlalchemy.sql import table, column, select, update, insert, delete, text
-from sqlalchemy.ext.declarative import *
 
 fPath = os.path.abspath(os.path.realpath(__file__))
 dPath = os.path.dirname(fPath)
@@ -21,12 +20,10 @@ if not os.path.exists(finPath):
 
 engine = create_engine("sqlite:///" + finPath + "\\pcbuildwebsite_db.db", echo=True, pool_pre_ping=True)
 Session = sessionmaker(bind=engine)
-Session.configure(bind=engine)
-session = Session(bind=engine)
-
+session = Session()
 
 # Define metadata information
-metadata = MetaData(bind=engine)
+metadata = MetaData()
 
 main_parts = ["cpu", "gpu", "cooler", "motherboard", "memory", "storage", "psu", "case"]
 
