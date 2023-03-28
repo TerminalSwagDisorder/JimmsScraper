@@ -2,6 +2,29 @@
 # Auth: Benjamin Willför/TerminalSwagDisorder & Sami Wazni
 # Desc: File currently in development containing code for creating a database
 
+import os
+import sqlite3
+import itertools
+from sqlalchemy import *
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql.expression import ColumnClause
+from sqlalchemy.sql import table, column, select, update, insert, delete, text
+from sqlalchemy.ext.declarative import *
+
+fPath = os.path.abspath(os.path.realpath(__file__))
+dPath = os.path.dirname(fPath)
+finPath = dPath + "\\database"
+
+# Create database folder if it does not exist
+if not os.path.exists(finPath):
+	os.makedirs(finPath)
+
+engine = create_engine("sqlite:///" + finPath + "\\pcbuildwebsite_db.db", echo=True, pool_pre_ping=True)
+Session = sessionmaker(bind=engine)
+Session.configure(bind=engine)
+session = Session(bind=engine)
+
+
 # Define metadata information
 metadata = MetaData(bind=engine)
 
