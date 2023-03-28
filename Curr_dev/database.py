@@ -170,3 +170,30 @@ case = Table("case", metadata,
 	Column("Url", TEXT)
 )
 metadata.create_all(engine)
+
+
+
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class CPU(Base):
+	__tablename__ = 'cpu'
+	id = Column(Integer, primary_key=True, autoincrement=True)
+	Name = Column(String)
+	Manufacturer = Column(String)
+	Core_Count = Column(String)
+	Performance_Core_Clock = Column(String)
+	Performance_Boost_Clock = Column(String)
+	TDP = Column(String)
+	Integrated_Graphics = Column(String)
+	L3_Cache = Column(String)
+	Simultaneous_Multithreading = Column(String)
+	Includes_CPU_Cooler = Column(String)
+	Socket = Column(String)
+	Price = Column(String)
+	Url = Column(String)
+
+	def __repr__(self):
+		return f"<CPU(id={self.id}, Name={self.Name}, Manufacturer={self.Manufacturer}, Price={self.Price})>"
