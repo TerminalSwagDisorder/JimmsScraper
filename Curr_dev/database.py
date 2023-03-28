@@ -59,13 +59,57 @@ class CPU(UniversalComponents):
 	TDP = Column("TDP", TEXT)
 	Integrated_Graphics = Column("Integrated GPU", TEXT)
 
+class GPU(UniversalComponents):
+	__tablename__ = 'gpu'
+
+	Color = Column("Color", TEXT)
+	Memory = Column("Memory", TEXT)
+	Memory_Typ = Column("Memory Type", TEXT)
+	Core_Clock = Column("Core Clock", TEXT)
+	Boost_Clock = Column("Boost Clock", TEXT)
+	Effective = Column("Effective Memory Clock", TEXT)
+	Interface = Column("Interface", TEXT)
+	TDP = Column("TDP", TEXT)
+	Cooling = Column("Cooling", TEXT)
+
+class Cooler(UniversalComponents):
+	__tablename__ = 'cpu cooler'
+	
+	Color = Column("Color", TEXT)
+	Fan_RPM = Column("Fan RPM", TEXT)
+	Noise_Level = Column("Noise Level", TEXT)
+	Height = Column("Height", TEXT)
+
+class Motherboard(UniversalComponents):
+	__tablename__ = 'motherboard'
+
+	Color = Column("Color", TEXT)
+	Mermory_Type = Column("Mermory Type", TEXT)
+	Memory_Max = Column("Memory Max", TEXT)
+	Memory_Slots = Column("Memory Slots", TEXT)
+
+class Memory(UniversalComponents):
+	__tablename__ = 'memory'
+
+	Modules = Column("Modules", TEXT)
+	Color = Column("Color", TEXT)
+
+class Storage(UniversalComponents):
+	__tablename__ = 'storage'
+
+	Capacity = Column("Capacity", TEXT)
+	Type = Column("Type", TEXT)
+	Interface = Column("Interface", TEXT)
+
 class PSU(UniversalComponents):
 	__tablename__ = 'psu'
+
 	is_ATX12V = Column("is_ATX12V", TEXT)
 	Dimensions = Column("Dimensions", TEXT)
 
 class Case(UniversalComponents):
 	__tablename__ = 'case'
+
 	Color = Column("Color", TEXT)
 	Size = Column("Size", TEXT)
 	Materials = Column("Materials", TEXT)
