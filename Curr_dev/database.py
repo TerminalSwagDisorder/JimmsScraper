@@ -9,6 +9,7 @@ from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import ColumnClause
 from sqlalchemy.sql import table, column, select, update, insert, delete, text
+from sqlalchemy.ext.declarative import declarative_base
 
 fPath = os.path.abspath(os.path.realpath(__file__))
 dPath = os.path.dirname(fPath)
@@ -27,6 +28,8 @@ metadata = MetaData()
 
 main_parts = ["cpu", "gpu", "cooler", "motherboard", "memory", "storage", "psu", "case"]
 
+# Part of SQLAlchemy
+Base = declarative_base()
 # Create table in database	   
 cpu = Table("cpu", metadata,
 	Column("id", INTEGER, primary_key=True, autoincrement=True),
@@ -169,31 +172,17 @@ case = Table("case", metadata,
 	Column("Price", TEXT),
 	Column("Url", TEXT)
 )
+
+class Case(Base):
+	__tablename__ = 'case'
+	ID = Column(Integer, primary_key=True, autoincrement=True)
+	Name = Column(Text)
+	Manufacturer = Column(Text)
+	Color = Column(Text)
+	Size = Column(Text)
+	Materials = Column(Text)
+	Compatibility = Column(Text)
+	Price = Column(Text)
+	Url = Column(Text)
+
 metadata.create_all(engine)
-
-
-
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
-
-class CPU(Base):
-	__tablename__ = 'cpu'
-	id = Column(Integer, primary_key=True, autoincrement=True)
-	Name = Column(String)
-	Manufacturer = Column(String)
-	Core_Count = Column(String)
-	Performance_Core_Clock = Column(String)
-	Performance_Boost_Clock = Column(String)
-	TDP = Column(String)
-	Integrated_Graphics = Column(String)
-	L3_Cache = Column(String)
-	Simultaneous_Multithreading = Column(String)
-	Includes_CPU_Cooler = Column(String)
-	Socket = Column(String)
-	Price = Column(String)
-	Url = Column(String)
-
-	def __repr__(self):
-		return f"<CPU(id={self.id}, Name={self.Name}, Manufacturer={self.Manufacturer}, Price={self.Price})>"
