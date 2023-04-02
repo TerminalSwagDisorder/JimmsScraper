@@ -47,74 +47,82 @@ class UniversalComponents(Base):
 
 class CPU(UniversalComponents):
 	__tablename__ = 'cpu'
-
-	Core_Count = Column("Core Count", TEXT)
-	Thread_Count = Column("Thread Count", TEXT)
-	Performance_Base_Clock = Column("Base Clock", TEXT)
-	Performance_Boost_Clock = Column("Boost Clock", TEXT)
-	L3_Cache = Column("L3 Cache", TEXT)
-	Socket = Column("Socket", TEXT)
-	PCIe_Ver = Column("PCie Version", TEXT)
-	Includes_CPU_Cooler = Column("Cpu Cooler", TEXT)
-	TDP = Column("TDP", TEXT)
-	Integrated_Graphics = Column("Integrated GPU", TEXT)
+	__table_args__ = (
+        Column('Core Count', TEXT),
+        Column('Thread Count', TEXT),
+        Column('Base Clock', TEXT),
+        Column('Boost Clock', TEXT),
+        Column('L3 Cache', TEXT),
+        Column('Socket', TEXT),
+        Column('PCie Version', TEXT),
+        Column('Cpu Cooler', TEXT),
+        Column('TDP', TEXT),
+        Column('Integrated GPU', TEXT)
+	)
 
 class GPU(UniversalComponents):
 	__tablename__ = 'gpu'
-
-	Color = Column("Color", TEXT)
-	Memory = Column("Memory", TEXT)
-	Memory_Typ = Column("Memory Type", TEXT)
-	Core_Clock = Column("Core Clock", TEXT)
-	Boost_Clock = Column("Boost Clock", TEXT)
-	Effective = Column("Effective Memory Clock", TEXT)
-	Interface = Column("Interface", TEXT)
-	TDP = Column("TDP", TEXT)
-	Cooling = Column("Cooling", TEXT)
+	__table_args__ = (
+        Column("Color", TEXT),
+		Column("Memory", TEXT),
+		Column("Memory Type", TEXT),
+		Column("Core Clock", TEXT),
+		Column("Boost Clock", TEXT),
+		Column("Effective Memory Clock", TEXT),
+		Column("Interface", TEXT),
+		Column("TDP", TEXT),
+		Column("Cooling", TEXT)
+	)	
 
 class Cooler(UniversalComponents):
 	__tablename__ = 'cpu cooler'
-	
-	Color = Column("Color", TEXT)
-	Fan_RPM = Column("Fan RPM", TEXT)
-	Noise_Level = Column("Noise Level", TEXT)
-	Height = Column("Height", TEXT)
+	__table_args__ = (
+        Column("Color", TEXT),
+		Column("Fan RPM", TEXT),
+		Column("Noise Level", TEXT),
+		Column("Height", TEXT)
+	)	
 
 class Motherboard(UniversalComponents):
 	__tablename__ = 'motherboard'
-
-	Color = Column("Color", TEXT)
-	Mermory_Type = Column("Mermory Type", TEXT)
-	Memory_Max = Column("Memory Max", TEXT)
-	Memory_Slots = Column("Memory Slots", TEXT)
+	__table_args__ = (
+        Column("Color", TEXT),
+		Column("Mermory Type", TEXT),
+		Column("Memory Max", TEXT),
+		Column("Memory Slots", TEXT)
+	)	
 
 class Memory(UniversalComponents):
 	__tablename__ = 'memory'
-
-	Modules = Column("Modules", TEXT)
-	Color = Column("Color", TEXT)
+	__table_args__ = (
+        Column("Modules", TEXT),
+		Column("Color", TEXT)
+	)	
 
 class Storage(UniversalComponents):
 	__tablename__ = 'storage'
-
-	Capacity = Column("Capacity", TEXT)
-	Type = Column("Type", TEXT)
-	Interface = Column("Interface", TEXT)
+	__table_args__ = (
+		Column("Capacity", TEXT),
+		Column("Type", TEXT),
+		Column("Interface", TEXT)
+	)	
 
 class PSU(UniversalComponents):
 	__tablename__ = 'psu'
-
-	is_ATX12V = Column("is_ATX12V", TEXT)
-	Dimensions = Column("Dimensions", TEXT)
+	__table_args__ = (
+		Column("is_ATX12V", TEXT),
+		Column("Dimensions", TEXT)
+	)	
 
 class Case(UniversalComponents):
 	__tablename__ = 'case'
-
-	Color = Column("Color", TEXT)
-	Size = Column("Size", TEXT)
-	Materials = Column("Materials", TEXT)
-	Compatibility = Column("Compatibility", TEXT)
-
+	__table_args__ = (
+		Column("Color", TEXT),
+		Column("Size", TEXT),
+		Column("Materials", TEXT),
+		Column("Compatibility", TEXT)
+	)	
+	
 Base.metadata.create_all(engine)
 
 
