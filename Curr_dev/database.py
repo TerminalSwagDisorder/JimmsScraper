@@ -124,26 +124,3 @@ class Case(UniversalComponents):
 	)	
 	
 Base.metadata.create_all(engine)
-
-
-# For specifying a order use __table_args__ 
-'''
-class CPU(UniversalComponents):
-    __tablename__ = 'cpu'
-    __table_args__ = (
-        Column('ID', INTEGER, primary_key=True, autoincrement=True),
-        Column('Name', TEXT),
-        Column('Core Count', TEXT),
-        Column('Thread Count', TEXT),
-        Column('Base Clock', TEXT),
-        Column('Boost Clock', TEXT),
-        Column('L3 Cache', TEXT),
-        Column('Socket', TEXT),
-        Column('PCie Version', TEXT),
-        Column('Cpu Cooler', TEXT),
-        Column('TDP', TEXT),
-        Column('Integrated GPU', TEXT),
-        Column('Price', TEXT),
-        Column('Url', TEXT)
-    )
-'''
