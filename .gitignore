@@ -3,3 +3,4 @@ comp1.txt
 comp2.txt
 /test
 *.db
+/__pycache__
