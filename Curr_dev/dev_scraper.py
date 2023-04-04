@@ -26,7 +26,6 @@ def main():
 	#get_subpages(URL, component_URL, driver)
 	data_scraper(URL, component_URL2)
 
-
 def check_record_exists(session, main_parts, name):
 	# Check if item exists in database
 	for single_part in main_parts:
@@ -69,8 +68,6 @@ def check_record_exists(session, main_parts, name):
 			query = session.query(database.case).filter(database.case.c.Name == name).first()
 			if query:
 				return True
-			
-
 			
 def get_subpages(URL, component_URL, driver):
 	#Get subpages for all components

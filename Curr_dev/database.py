@@ -23,13 +23,12 @@ def create_database():
 	Session = sessionmaker(bind=engine)
 	session = Session()
 
-	# Define metadata information
+    # Define metadata information
 	metadata = MetaData()
 
 	return engine, session, metadata
 
 engine, session, metadata = create_database()
-
 
 Base = declarative_base()
 
