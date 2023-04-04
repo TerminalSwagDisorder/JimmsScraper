@@ -24,7 +24,8 @@ def create_database():
     session = Session()
 
     # Define metadata information
-    metadata = MetaData(bind=engine)
+    metadata = MetaData()
+    metadata.bind = engine
 
     return engine, session, metadata
 

@@ -2,7 +2,7 @@
 # Auth: Benjamin Willför/TerminalSwagDisorder & Sami Wazni
 # Desc: File currently in development containing code for a scraper for jimms.com
 
-#import database
+import database
 import requests
 from bs4 import BeautifulSoup
 from time import sleep as sleep
