@@ -5,3 +5,4 @@ comp2.txt
 *.db
 /__pycache__
 *.pyc
+Curr_dev/database/pcbuildwebsite_db.db
