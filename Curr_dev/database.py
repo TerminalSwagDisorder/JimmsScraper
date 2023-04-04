@@ -2,9 +2,7 @@
 # Auth: Benjamin Willför/TerminalSwagDisorder & Sami Wazni
 # Desc: File currently in development containing code for creating a database
 
-import os
-import sqlite3
-import itertools
+from pathlib import Path
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql.expression import ColumnClause
@@ -13,22 +11,22 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 def create_database():
-	# Create database folder if it does not exist
-	fPath = os.path.abspath(os.path.realpath(__file__))
-	dPath = os.path.dirname(fPath)
-	finPath = dPath + "\\database"
+    # Create database folder if it does not exist
+    fPath = Path(__file__).resolve()
+    dPath = fPath.parent
+    finPath = dPath.joinpath("database")
 
-	if not os.path.exists(finPath):
-		os.makedirs(finPath)
+    if not finPath.exists():
+        finPath.mkdir()
 
-	engine = create_engine("sqlite:///" + finPath + "\\pcbuildwebsite_db.db", echo = True, pool_pre_ping = True)
-	Session = sessionmaker(bind = engine)
-	session = Session()
+    engine = create_engine("sqlite:///" + str(finPath.joinpath("pcbuildwebsite_db.db")), echo=True, pool_pre_ping=True)
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
-	# Define metadata information
-	metadata = MetaData()
+    # Define metadata information
+    metadata = MetaData(bind=engine)
 
-	return engine, session, metadata
+    return engine, session, metadata
 
 engine, session, metadata = create_database()
 
@@ -38,10 +36,10 @@ Base = declarative_base()
 class UniversalComponents(Base):
 	__abstract__ = True
 	ID = Column("ID", INTEGER, primary_key = True, autoincrement = True)
-	Name = Column("Name", TEXT)
-	Manufacturer = Column("Manufacturer", TEXT)
 	Price = Column("Price", TEXT)
 	Url = Column("Url", TEXT)
+	Name = Column("Name", TEXT)
+	Manufacturer = Column("Manufacturer", TEXT)
 
 	__tablename__ = "universal_components"
 	__mapper_args__ = {
