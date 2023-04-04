@@ -17,14 +17,14 @@ def main():
 	URL = "https://www.jimms.fi"
 	base_URL = "/fi/Product/Show/"
 	component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
-	component_URL2 = ["/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
+	component_URL2 = ["https://www.jimms.fi/fi/Product/Show/166056/100-100000065box/amd-ryzen-5-5600x-am4-3-7-ghz-6-core-boxed"]
 
 	driver_path = "./chromedriver_win32/chromedriver.exe"
 
 	driver = webdriver.Chrome(executable_path=driver_path)
 	
-	get_subpages(URL, component_URL, driver)
-
+	#get_subpages(URL, component_URL, driver)
+	data_scraper(URL, component_URL2)
 
 
 def check_record_exists(session, main_parts, name):
@@ -108,7 +108,14 @@ def get_subpages(URL, component_URL, driver):
 	driver.close()
 	driver.quit()
 
-
+def data_scraper(URL, component_URL2):
+	for component in component_URL2:
+		item_Page = requests.get(component, allow_redirects=True)
+		item_Soup = BeautifulSoup(item_Page.content, "html.parser")
+		
+		results_item = item_Soup.find("div", itemprop="description")
+		desc_data = results_item.find("p")
+		print(desc_data)
 			
 
 main()
