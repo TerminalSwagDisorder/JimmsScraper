@@ -14,17 +14,19 @@ from selenium.webdriver.common.by import By
 
 def main():
 	# Urls for jimms
-	URL = "https://www.jimms.fi"
-	base_URL = "/fi/Product/Show/"
-	component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
+	base_URL = "https://www.jimms.fi"
+	product_URL = "/fi/Product/Show/"
+	component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt"]
 	component_URL2 = ["https://www.jimms.fi/fi/Product/Show/166056/100-100000065box/amd-ryzen-5-5600x-am4-3-7-ghz-6-core-boxed"]
+	component_temp = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
 
 	driver_path = "./chromedriver_win32/chromedriver.exe"
 
 	driver = webdriver.Chrome(executable_path=driver_path)
 	
-	#get_subpages(URL, component_URL, driver)
-	data_scraper(URL, component_URL2)
+	index_pages, index_pages_dict = get_subpages(base_URL, component_URL, driver)
+	all_product_links = get_urls(base_URL, index_pages, index_pages_dict)
+	data_scraper(base_URL, all_product_links)
 
 def check_record_exists(session, main_parts, name):
 	# Check if item exists in database
@@ -69,17 +71,20 @@ def check_record_exists(session, main_parts, name):
 			if query:
 				return True
 			
-def get_subpages(URL, component_URL, driver):
+def get_subpages(base_URL, component_URL, driver):
+	index_pages_dict = {}
+	index_pages = []
+	
 	#Get subpages for all components
 	for item in component_URL:		
-		subpage = "?p="
+		parameter = "?p="
 		
-		listz = [1]
+		page_index = [1]
 
 		print("Getting all pages for", item)
 		
 		# Go to page using Selenium
-		driver.get(URL + item + "?p=1")
+		driver.get(base_URL + item + "?p=1")
 		wait = WebDriverWait(driver, 10)
 		button = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[@data-bind='click: moveToLastPage']")))
 		driver.execute_script("arguments[0].scrollIntoView();", button)
@@ -89,23 +94,47 @@ def get_subpages(URL, component_URL, driver):
 		# Get the URL
 		last_page_url = driver.current_url
 		last_page_number = int(last_page_url.split("=")[-1])
-		listz.append(last_page_number)
+		page_index.append(last_page_number)
 		
-		# Add subpage numbers to listz
-		page_nums = range(listz[0] + 1, listz[1])
+		# Add subpage numbers to page_index
+		page_nums = range(page_index[0] + 1, page_index[1])
 		for num in page_nums:
-			listz.append(num)
-			listz.sort()
+			page_index.append(num)
+			page_index.sort()
 		
 		# Create a new list with added parameter
-		pages = [str(i) for i in listz]
-		pages_with_param = [subpage + page for page in pages]		
-		print(pages_with_param)
+		pages_with_param = [parameter + str(page) for page in page_index]
+
+		# Create a list/dictionary with all subpages
+		index_pages_dict[item] = [parameter + str(page) for page in page_index]
+		index_pages.append(pages_with_param)
+		
 		sleep(2)
+
+		
 	driver.close()
 	driver.quit()
 
-def data_scraper(URL, component_URL2):
+	return index_pages, index_pages_dict
+	
+def get_urls(base_URL, index_pages, index_pages_dict):
+	all_product_links = []
+	for key, value in index_pages_dict.items():
+		for index in value:
+			print(base_URL + key + index)
+			product_list_page = requests.get(base_URL + key + index)
+			next_soup = BeautifulSoup(product_list_page.content, "html.parser")
+			page_content = next_soup.find("div", class_="product-list-wrapper")
+			product_name = page_content.find_all("h5", class_="product-box-name")
+			for item in product_name:
+				product_link = item.find("a", href = True)
+				get_link = product_link.get("href")
+
+				all_product_links.append(get_link)
+	
+	return all_product_links
+
+def data_scraper(base_URL, all_product_links):
 	for component in component_URL2:
 		item_Page = requests.get(component, allow_redirects=True)
 		item_Soup = BeautifulSoup(item_Page.content, "html.parser")
