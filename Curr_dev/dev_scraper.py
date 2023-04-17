@@ -140,7 +140,7 @@ def get_urls(base_URL, index_pages_dict):
 
 				# Get the actual link for each item
 				for item in product_name:
-					if "Tarjous" not in item.text and "Bundle" not in item.text:
+					if "Tarjous" not in item.text and "Bundle" not in item.text and "Outlet" not in item.text:
 						product_link = item.find("a", href = True)
 						get_link = product_link.get("href")
 
@@ -175,52 +175,70 @@ def data_scraper(base_URL, all_product_links):
 		desc_data = results_item.find("strong", text="Tekniset tiedot")
 		if desc_data is not None:
 			trimmed_data = desc_data.find_all_next(recursive = False)
-			list_list = []
+			desc_list = []
 			for item in trimmed_data:
 				if item.name in ["div", "a"]:
 					print("break:", item.name)
 					break
-				elif item.name in ["li", "ul"]:
-					list_item = item.text.strip("\n")
-					if list_item and list_item not in list_list:
-						print(list_item)
-						list_list.append(list_item)
-					#print(list_list)
-					#print(item.text)
-						
-		#splitlines()	#Splits the string at line breaks and returns a list
 
-		if "/fi/Product/List/000-00K" in get_category:
-			print("Drive")
-		elif "/fi/Product/List/000-00H" in get_category:
-			print("Mobo")
-		elif "/fi/Product/List/000-00J" in get_category:
-			print("Case")
-		elif "/fi/Product/List/000-00M" in get_category:
-			print("Addin")
-		elif "/fi/Product/List/000-00N" in get_category:
-			print("RAM")
-		elif "/fi/Product/List/000-00P" in get_category:
-			gpu_dict = {
-			"Color": None,
-			"Memory": None,
-			"Memory Type": None,
-			"Core Clock": None,
-			"Boost Clock": None,
-			"Effective Memory Clock": None,
-			"Interface": None,
-			"TDP": None,
-			"Cooling": None,
-			}
-		elif "/fi/Product/List/000-00R" in get_category:
-			print("CPU")
-		elif "/fi/Product/List/000-00U" in get_category:
-			print("PSU")
+				elif item.name in ["p", "strong", "span", "li", "ul"]:
+					for ti in item.stripped_strings:
+						if ti and ti not in desc_list:
+							#print(ti)
+							desc_list.append(ti)
 			
-		else:
-			print("Something went wrong. Category:", get_category)
-		
-		
+			print(desc_list)
+			pprint(desc_list)			
+			gpu_dict = {}
+			for desc in desc_list:
+				if "/fi/Product/List/000-00K" in get_category:
+					print("Drive")
+				elif "/fi/Product/List/000-00H" in get_category:
+					print("Mobo")
+				elif "/fi/Product/List/000-00J" in get_category:
+					print("Case")
+				elif "/fi/Product/List/000-00M" in get_category:
+					print("Addin")
+				elif "/fi/Product/List/000-00N" in get_category:
+					print("RAM")
+				elif "/fi/Product/List/000-00P" in get_category:
+					if "CUDA" in desc.upper() or "STREAM-PROSESSORIT" in desc.upper():
+						cores = desc.capitalize()
+						gpu_dict["Cores"] = cores
+
+					elif "DEFAULT MODE" in desc.upper() or "GAME" in desc.upper() or "KELLOTAAJUUS" in desc.upper() and "MHZ" in desc.upper():
+						clock = desc.capitalize()
+						gpu_dict["Core Clock"] = clock
+
+					elif "MÄÄRÄ" in desc.upper():
+						memory = desc.capitalize()
+						gpu_dict["Memory"] = memory
+
+					elif "VÄYLÄ" in desc.upper() and not "MUISTIVÄYLÄ" in desc.upper():
+						interface = desc.capitalize()
+						gpu_dict["Interface"] = interface
+
+					elif "MITAT" in desc.upper() or "PITUUS" in desc.upper():
+						size = desc.capitalize()
+						gpu_dict["Size"] = size
+
+					elif "TDP" in desc.upper() or "SUOSITELTU VIRTALÄHTEEN KOKO" in desc.upper():
+						tdp = desc.capitalize()
+						gpu_dict["TDP"] = tdp
+
+					print("gpu_dict")
+					pprint(gpu_dict)
+				elif "/fi/Product/List/000-00R" in get_category:
+					print("CPU")
+				elif "/fi/Product/List/000-00U" in get_category:
+					print("PSU")
+
+				else:
+					print("Something went wrong. Category:", get_category)
+
+
+
+
 		sleep(0.2)
 		#print(desc_data)
 
