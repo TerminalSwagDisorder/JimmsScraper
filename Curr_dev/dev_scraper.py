@@ -168,7 +168,18 @@ def data_scraper(base_URL, all_product_links):
 		# Get product category
 		category_link = item_soup.find_all("a", class_="link-secondary")[2]
 		get_category = category_link.get("href")
+
+
+		## Testing getting the data with metadata
+		# Get manufacturer 
+		meta_manufacturer = item_soup.find("meta", {"property": "product:brand"})
+		m_manufacturer = meta_manufacturer["content"]
 		
+		# Get price
+		meta_price = item_soup.find("meta", {"property": "product:price:amount"})
+		m_price = meta_price["content"]
+
+
 		# Get the name
 		name_location = item_soup.find("h1")
 		name_item = name_location.find_all("span", itemprop="name")
@@ -181,9 +192,9 @@ def data_scraper(base_URL, all_product_links):
 					
 		trimmed_name = name_list[1].split(",", 1)
 		trimmed_name = trimmed_name[0].strip().capitalize()
-		
 
-		# Get the data and trim it
+
+		# Get the description data and trim it
 		results_item = item_soup.find("div", itemprop="description")
 		
 		print("Current page:", curr_link)
@@ -205,7 +216,6 @@ def data_scraper(base_URL, all_product_links):
 			#pprint(name_list)
 			#pprint(desc_list)
 
-			part_dict = {}
 			for desc in desc_list:
 				## Into these if statements, do as i've done in the gpu part already
 				if "/fi/Product/List/000-00K" in get_category:
@@ -241,29 +251,6 @@ def data_scraper(base_URL, all_product_links):
 						tdp = desc
 
 
-					gpu_list = [cores, clock, memory, interface, size, tdp]
-
-					for i, item in enumerate(gpu_list):
-						data = item.split(":", 1)
-						if len(data) > 1:
-							gpu_list[i] = data[1].strip().capitalize()
-						else:
-							gpu_list[i] = item.strip().capitalize()
-
-					if "VÄHINTÄÄN" in gpu_list[5].upper():
-						gpu_list[5] = gpu_list[5].upper().strip("VÄHINTÄÄN")
-
-
-					part_dict["URL"] = curr_link
-					part_dict["Price"] = None
-					part_dict["Name"] = trimmed_name
-					part_dict["Manufacturer"] = name_list[0]
-					part_dict["Cores"] = gpu_list[0]
-					part_dict["Core Clock"] = gpu_list[1]
-					part_dict["Memory"] = gpu_list[2]
-					part_dict["Interface"] = gpu_list[3]
-					part_dict["Size"] = gpu_list[4]
-					part_dict["TDP"] = gpu_list[5]
 
 				elif "/fi/Product/List/000-00R" in get_category:
 					print("CPU")
@@ -273,12 +260,37 @@ def data_scraper(base_URL, all_product_links):
 				else:
 					print("Something went wrong. Category:", get_category)
 					
+			gpu_list = [cores, clock, memory, interface, size, tdp]
+
+			for i, item in enumerate(gpu_list):
+				data = item.split(":", 1)
+				if len(data) > 1:
+					gpu_list[i] = data[1].strip().capitalize()
+				else:
+					gpu_list[i] = item.strip().capitalize()
+
+			if "VÄHINTÄÄN" in gpu_list[5].upper():
+				gpu_list[5] = gpu_list[5].upper().strip("VÄHINTÄÄN")
+
+			## Create dictionaries for all parts, like this	
+			gpu_dict = {
+				"URL": curr_link,
+				"Price": m_price,
+				"Name": trimmed_name,
+				"Manufacturer": m_manufacturer,
+				"Cores": gpu_list[0],
+				"Core Clock": gpu_list[1],
+				"Memory": gpu_list[2],
+				"Interface": gpu_list[3],
+				"Size": gpu_list[4],
+				"TDP": gpu_list[5],
+			}
+
 					
 			## Do the insertion of data to the database		
 
-			#print("part_dict")
-			#pprint(part_dict)
-
+			pprint(gpu_dict)
+			print("\n")
 
 
 main()
