@@ -20,14 +20,15 @@ def main():
 	component_URL = ["/fi/Product/List/000-00P/komponentit--naytonohjaimet"]
 	component_URL2 = ["https://www.jimms.fi/fi/Product/Show/187728/tuf-rtx4070ti-o12g-gaming/asus-geforce-rtx-4070-ti-tuf-gaming-oc-edition-naytonohjain-12gb-gddr6x-asus-cashback-70"]
 	component_temp = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
-
+	## Note that component_URL is currently only for gpu. Just copy the contents of component_temp there if you want to do something with all parts
 	driver_path = "./chromedriver_win32/chromedriver.exe"
 
 	driver = webdriver.Chrome(executable_path=driver_path)
 	
 	index_pages_dict = get_subpages(base_URL, component_URL, driver)
 	all_product_links = get_urls(base_URL, index_pages_dict)
-	data_scraper(base_URL, all_product_links)
+	get_category, desc_list = data_scraper(base_URL, all_product_links)
+	data_prep(get_category, desc_list)
 
 def check_record_exists(session, main_parts, name):
 	# Check if item exists in database
@@ -158,6 +159,7 @@ def get_urls(base_URL, index_pages_dict):
 	return all_product_links
 
 def data_scraper(base_URL, all_product_links):
+	
 	for product in all_product_links:
 		curr_link = base_URL + product
 		item_page = requests.get(curr_link, allow_redirects=True)
@@ -167,30 +169,45 @@ def data_scraper(base_URL, all_product_links):
 		category_link = item_soup.find_all("a", class_="link-secondary")[2]
 		get_category = category_link.get("href")
 		
+		# Get the name
+		name_location = item_soup.find("h1")
+		name_item = name_location.find_all("span", itemprop="name")
+		
+		name_list = []
+		for name in name_item:
+			for trim in name.stripped_strings:
+				if trim and trim not in name_list:
+					name_list.append(trim)
+					
+		trimmed_name = name_list[1].split(",", 1)
+		trimmed_name = trimmed_name[0].strip().capitalize()
+		
+
 		# Get the data and trim it
 		results_item = item_soup.find("div", itemprop="description")
-		data_start = results_item.find_all(["p", "ul", "li"])
 		
-		print(curr_link)
-		desc_data = results_item.find("strong", text="Tekniset tiedot")
+		print("Current page:", curr_link)
+		desc_data = results_item.select_one("strong:-soup-contains('Tekniset tiedot')")
 		if desc_data is not None:
 			trimmed_data = desc_data.find_all_next(recursive = False)
 			desc_list = []
 			for item in trimmed_data:
 				if item.name in ["div", "a"]:
-					print("break:", item.name)
+					#print("break:", item.name)
 					break
 
 				elif item.name in ["p", "strong", "span", "li", "ul"]:
-					for ti in item.stripped_strings:
-						if ti and ti not in desc_list:
-							#print(ti)
-							desc_list.append(ti)
-			
-			print(desc_list)
-			pprint(desc_list)			
-			gpu_dict = {}
+					for desc in item.stripped_strings:
+						if desc and desc not in desc_list:
+							#print(desc)
+							desc_list.append(desc)
+			sleep(0.1)
+			#pprint(name_list)
+			#pprint(desc_list)
+
+			part_dict = {}
 			for desc in desc_list:
+				## Into these if statements, do as i've done in the gpu part already
 				if "/fi/Product/List/000-00K" in get_category:
 					print("Drive")
 				elif "/fi/Product/List/000-00H" in get_category:
@@ -202,32 +219,52 @@ def data_scraper(base_URL, all_product_links):
 				elif "/fi/Product/List/000-00N" in get_category:
 					print("RAM")
 				elif "/fi/Product/List/000-00P" in get_category:
+					if "NÄYTÖNOHJAIN" in trimmed_name.upper():
+						trimmed_name = trimmed_name.upper().strip("NÄYTÖNOHJAIN").strip().rstrip("-").strip().capitalize()
+						
 					if "CUDA" in desc.upper() or "STREAM-PROSESSORIT" in desc.upper():
-						cores = desc.capitalize()
-						gpu_dict["Cores"] = cores
+						cores = desc
 
-					elif "DEFAULT MODE" in desc.upper() or "GAME" in desc.upper() or "KELLOTAAJUUS" in desc.upper() and "MHZ" in desc.upper():
-						clock = desc.capitalize()
-						gpu_dict["Core Clock"] = clock
+					elif "BOOST" in desc.upper() or "KELLOTAAJUUS" in desc.upper() and "MHZ" in desc.upper():
+						clock = desc
 
 					elif "MÄÄRÄ" in desc.upper():
-						memory = desc.capitalize()
-						gpu_dict["Memory"] = memory
+						memory = desc
 
 					elif "VÄYLÄ" in desc.upper() and not "MUISTIVÄYLÄ" in desc.upper():
-						interface = desc.capitalize()
-						gpu_dict["Interface"] = interface
+						interface = desc
 
 					elif "MITAT" in desc.upper() or "PITUUS" in desc.upper():
-						size = desc.capitalize()
-						gpu_dict["Size"] = size
+						size = desc
 
-					elif "TDP" in desc.upper() or "SUOSITELTU VIRTALÄHTEEN KOKO" in desc.upper():
-						tdp = desc.capitalize()
-						gpu_dict["TDP"] = tdp
+					elif "TDP" in desc.upper() or "VIRTALÄHTE" in desc.upper():
+						tdp = desc
 
-					print("gpu_dict")
-					pprint(gpu_dict)
+
+					gpu_list = [cores, clock, memory, interface, size, tdp]
+
+					for i, item in enumerate(gpu_list):
+						data = item.split(":", 1)
+						if len(data) > 1:
+							gpu_list[i] = data[1].strip().capitalize()
+						else:
+							gpu_list[i] = item.strip().capitalize()
+
+					if "VÄHINTÄÄN" in gpu_list[5].upper():
+						gpu_list[5] = gpu_list[5].upper().strip("VÄHINTÄÄN")
+
+
+					part_dict["URL"] = curr_link
+					part_dict["Price"] = None
+					part_dict["Name"] = trimmed_name
+					part_dict["Manufacturer"] = name_list[0]
+					part_dict["Cores"] = gpu_list[0]
+					part_dict["Core Clock"] = gpu_list[1]
+					part_dict["Memory"] = gpu_list[2]
+					part_dict["Interface"] = gpu_list[3]
+					part_dict["Size"] = gpu_list[4]
+					part_dict["TDP"] = gpu_list[5]
+
 				elif "/fi/Product/List/000-00R" in get_category:
 					print("CPU")
 				elif "/fi/Product/List/000-00U" in get_category:
@@ -235,11 +272,13 @@ def data_scraper(base_URL, all_product_links):
 
 				else:
 					print("Something went wrong. Category:", get_category)
+					
+					
+			## Do the insertion of data to the database		
+
+			#print("part_dict")
+			#pprint(part_dict)
 
 
-
-
-		sleep(0.2)
-		#print(desc_data)
 
 main()
