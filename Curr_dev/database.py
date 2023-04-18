@@ -66,15 +66,12 @@ class GPU(UniversalComponents):
 	__tablename__ = "gpu"
 
 	__table_args__ = (
-		Column("Color", TEXT),
+		Column("Cores", TEXT),
 		Column("Memory", TEXT),
-		Column("Memory Type", TEXT),
 		Column("Core Clock", TEXT),
-		Column("Boost Clock", TEXT),
-		Column("Effective Memory Clock", TEXT),
 		Column("Interface", TEXT),
+		Column("Size", TEXT),
 		Column("TDP", TEXT),
-		Column("Cooling", TEXT)
 	)
 
 class Cooler(UniversalComponents):
