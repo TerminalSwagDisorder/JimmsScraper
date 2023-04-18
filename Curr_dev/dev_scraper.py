@@ -17,7 +17,7 @@ def main():
 	# Urls for jimms
 	base_URL = "https://www.jimms.fi"
 	product_URL = "/fi/Product/Show/"
-	component_URL = ["/fi/Product/List/000-00H/komponentit--emolevyt"]
+	component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt"]
 	component_URL2 = ["https://www.jimms.fi/fi/Product/Show/187728/tuf-rtx4070ti-o12g-gaming/asus-geforce-rtx-4070-ti-tuf-gaming-oc-edition-naytonohjain-12gb-gddr6x-asus-cashback-70"]
 	component_temp = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
 	## Note that component_URL is currently only for gpu. Just copy the contents of component_temp there if you want to do something with all parts
@@ -30,6 +30,29 @@ def main():
 	get_category, desc_list = data_scraper(base_URL, all_product_links)
 	data_prep(get_category, desc_list)
 
+
+def get_meta(item_soup, metasearch):
+		meta_location = item_soup.find("meta", metasearch)
+		metadata = meta_location["content"]
+	
+		return metadata
+
+def strong_search(results_item, strong_desc):
+	# Get strong item with string from description
+	strong_location = results_item.select_one(f"strong:-soup-contains('{strong_desc}')")
+	strong_list = []
+
+	if strong_location is not None:
+		strong_data = strong_location.find_next_siblings(string = True)
+		for item in strong_data:
+			if item != ":" and item is not None and item not in strong_list:
+				strong_list.append(item)
+		strong_list = strong_list[0]
+
+	else:
+		strong_list = None
+		
+	return strong_list
 
 
 def trim_list(item_list):
@@ -184,17 +207,12 @@ def data_scraper(base_URL, all_product_links):
 
 
 		## Testing getting the data with metadata
-		# Get manufacturer 
-		meta_manufacturer = item_soup.find("meta", {"property": "product:brand"})
-		m_manufacturer = meta_manufacturer["content"]
+		m_manufacturer = get_meta(item_soup, {"property": "product:brand"})
+		m_price = get_meta(item_soup, {"property": "product:price:amount"})
+		m_desc = get_meta(item_soup, {"property": "og:description"})
 		
-		# Get price
-		meta_price = item_soup.find("meta", {"property": "product:price:amount"})
-		m_price = meta_price["content"]
 		
-		# Get description in different form
-		meta_desc = item_soup.find("meta", {"property": "og:description"})
-		m_desc = meta_desc["content"]
+		
 
 
 		# Get the name
@@ -213,54 +231,11 @@ def data_scraper(base_URL, all_product_links):
 		
 		# Get the description
 		results_item = item_soup.find("div", itemprop="description")
-
-		# Get motherboard chipset from description
-		chipset_location = results_item.select_one("strong:-soup-contains('Piirisarja')")
-		chipset_list = []
 		
-		if chipset_location is not None:
-			chipset_data = chipset_location.find_next_siblings(string = True)
-			for item in chipset_data:
-				if item != ":" and item is not None and item not in chipset_list:
-					chipset_list.append(item)
-			chipset_list = chipset_list[0]
-		else:
-			chipset_list = None
 		
-		# Get motherboard form factor from description
-		ff_location = results_item.select_one("strong:-soup-contains('Emolevyn tyyppi')")
-		ff_list = []
-		
-		if ff_location is not None:
-			ff_data = ff_location.find_next_siblings(string = True)
-			for item in ff_data:
-				if item != ":" and item is not None and item not in ff_list:
-					ff_list.append(item)
-			ff_list = ff_list[0]
-		else:
-			ff_list = None
-		
-		# Get motherboard form factor from description
-		mobo_memory_location = results_item.select_one("strong:-soup-contains('Muisti')")
-		mobo_memory_list = []
-		
-		if mobo_memory_location is not None:
-			mobo_memory_data = mobo_memory_location.find_next_siblings(string = True)
-			for item in mobo_memory_data:
-				if item != ":" and item is not None and item not in mobo_memory_list:
-					mobo_memory_list.append(item)
-			mobo_memory_list = mobo_memory_list[0]
-			if "," in mobo_memory_list:
-				mobo_memory_list = mobo_memory_list.split(",", 1)
-				if len(mobo_memory_list) > 1:
-					mobo_memory_list = mobo_memory_list[0].strip()
-				else:
-					mobo_memory_list = mobo_memory_list
-		else:
-			mobo_memory_list = None
-
-		print(mobo_memory_list)
-
+		chipset_list = strong_search(results_item, "Piirisarja")
+		ff_list = strong_search(results_item, "Emolevyn tyyppi")
+		mobo_memory_list = strong_search(results_item, "Muisti")
 
 		
 		# Get all of the description data and trim it
@@ -283,39 +258,38 @@ def data_scraper(base_URL, all_product_links):
 			#pprint(name_list)
 			#pprint(desc_list)
 
+			capacity = None
+			form_factor = None
+			interface = None
+			cache = None
+			flash = None
+			tbw = None
+			chipset = None
+			form_factor = None
+			memory_compatibility = None
+			cores = None
+			clock = None
+			memory = None
+			interface = None
+			size = None
+			tdp = None
+			core_count = None
+			thread_count = None
+			base_clock = None
+			l3_cache = None
+			socket = None
+			cpu_cooler = None
+			igpu = None
+			model = None
+			case_type = None
+			dimensions = None
+			color = None
+			materials = None
+			fan_support = None
+			cooling = None
+			slots = None
+			weight = None
 			for desc in desc_list:
-				trimmed_name = None
-				capacity = None
-				form_factor = None
-				interface = None
-				cache = None
-				flash = None
-				tbw = None
-				chipset = None
-				form_factor = None
-				memory_compatibility = None
-				cores = None
-				clock = None
-				memory = None
-				interface = None
-				size = None
-				tdp = None
-				core_count = None
-				thread_count = None
-				base_clock = None
-				l3_cache = None
-				socket = None
-				cpu_cooler = None
-				igpu = None
-				model = None
-				case_type = None
-				dimensions = None
-				color = None
-				materials = None
-				fan_support = None
-				cooling = None
-				slots = None
-				weight = None
 
 				
 				## Into these if statements, do as i've done in the gpu part already
@@ -485,7 +459,7 @@ def data_scraper(base_URL, all_product_links):
 					print("Something went wrong. Category:", get_category)
 					
 			part_lists_dict = {
-				"storage_list": [trimmed_name, capacity, form_factor, interface, cache, flash, tbw],
+				"storage_list": [capacity, form_factor, interface, cache, flash, tbw],
 				"mobo_list": [chipset, form_factor, memory_compatibility],
 				"gpu_list": [cores, clock, memory, interface, size, tdp],
 				"cpu_list": [core_count, thread_count, base_clock, l3_cache, socket, cpu_cooler, tdp, igpu],
@@ -503,6 +477,7 @@ def data_scraper(base_URL, all_product_links):
 			elif part_type == "case":
 				item_list = part_lists_dict["case_list"]
 				
+			pprint(item_list)
 			item_list = trim_list(item_list)
 
 			if part_type == "gpu" and item_list[5] and item_list[5] != None:
