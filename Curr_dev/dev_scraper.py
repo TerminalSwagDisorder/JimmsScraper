@@ -289,8 +289,26 @@ def data_scraper(base_URL, all_product_links):
 					print("Case")
 				elif "/fi/Product/List/000-00M" in get_category:
 					print("Addin")
+
 				elif "/fi/Product/List/000-00N" in get_category:
-					print("RAM")
+					if "MUISTIT" in trimmed_name.upper():
+						trimmed_name = trimmed_name.upper().strip("MUISTIT").strip().capitalize()
+					
+					if "KAPASITEETTI" in desc.upper():
+						capacity = desc
+					
+					elif "NOPEUS" in desc.upper():
+						speed = desc
+					
+					elif "LATENSSI:" in desc.upper():
+						latency = desc
+						
+					elif "JÄNNITE" in desc.upper():
+						voltage = desc
+						
+					elif "RANK" in desc.upper():
+						rank = desc
+
 				elif "/fi/Product/List/000-00P" in get_category:
 					if "NÄYTÖNOHJAIN" in trimmed_name.upper():
 						trimmed_name = trimmed_name.upper().strip("NÄYTÖNOHJAIN").strip().rstrip("-").strip().capitalize()
@@ -312,7 +330,6 @@ def data_scraper(base_URL, all_product_links):
 
 					elif "TDP" in desc.upper() or "VIRTALÄHTE" in desc.upper():
 						tdp = desc
-
 
 
 				elif "/fi/Product/List/000-00R" in get_category:
@@ -337,7 +354,16 @@ def data_scraper(base_URL, all_product_links):
 				if "VÄHINTÄÄN" in gpu_list[5].upper():
 					gpu_list[5] = gpu_list[5].upper().strip("VÄHINTÄÄN")
 
+
 			## Create dictionaries for all parts, like this	
+			memory_dict = {
+				"Capacity": capacity,
+				"Speed": speed,
+				"Latency": latency,
+				"Voltage": voltage,
+				"Rank": rank,
+			}
+
 			storage_dict = {
 				"Capacity": capacity,
 				"Form factor": form_factor,
