@@ -11,28 +11,28 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 def create_database():
-    # Create database folder if it does not exist
-    fPath = Path(__file__).resolve()
-    dPath = fPath.parent
-    finPath = dPath.joinpath("database")
+	# Create database folder if it does not exist
+	fPath = Path(__file__).resolve()
+	dPath = fPath.parent
+	finPath = dPath.joinpath("database")
 
-    if not finPath.exists():
-        finPath.mkdir()
+	if not finPath.exists():
+		finPath.mkdir()
 
-    engine = create_engine("sqlite:///" + str(finPath.joinpath("pcbuildwebsite_db.db")), echo=True, pool_pre_ping=True)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+	engine = create_engine("sqlite:///" + str(finPath.joinpath("pcbuildwebsite_db.db")), echo=True, pool_pre_ping=True)
+	Session = sessionmaker(bind=engine)
+	session = Session()
 
     # Define metadata information
-    metadata = MetaData(bind=engine)
+	metadata = MetaData()
 
-    return engine, session, metadata
+	return engine, session, metadata
 
 engine, session, metadata = create_database()
 
-
 Base = declarative_base()
-# Create table in database	 
+
+# Create tables in database	 
 class UniversalComponents(Base):
 	__abstract__ = True
 	ID = Column("ID", INTEGER, primary_key = True, autoincrement = True)
@@ -66,15 +66,12 @@ class GPU(UniversalComponents):
 	__tablename__ = "gpu"
 
 	__table_args__ = (
-		Column("Color", TEXT),
+		Column("Cores", TEXT),
 		Column("Memory", TEXT),
-		Column("Memory Type", TEXT),
 		Column("Core Clock", TEXT),
-		Column("Boost Clock", TEXT),
-		Column("Effective Memory Clock", TEXT),
 		Column("Interface", TEXT),
+		Column("Size", TEXT),
 		Column("TDP", TEXT),
-		Column("Cooling", TEXT)
 	)
 
 class Cooler(UniversalComponents):
