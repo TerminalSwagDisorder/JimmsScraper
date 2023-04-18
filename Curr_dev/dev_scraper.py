@@ -286,6 +286,36 @@ def data_scraper(base_URL, all_product_links):
 						pass
 					
 				elif "/fi/Product/List/000-00J" in get_category:
+					if "KOTELOT" in trimmed_name.upper():
+						trimmed_name = trimmed_name.upper().strip("KOTELOT").strip().capitalize()
+
+					if "MALLI" in desc.upper():
+						model = desc
+					
+					elif "KOTELOTYYPPI" in desc.upper():
+						case_type = desc
+
+					elif "MITAT" in desc.upper():
+						dimensions = desc
+
+					elif "VÄRI" in desc.upper():
+						color = desc
+					
+					elif "MATERIAALIT" in desc.upper():
+						materials = desc
+					
+					elif "TUULETINTUKI" in desc.upper() or "EDESSÄ" in desc.upper() or "KATOSSA" in desc.upper() or "TAKANA" in desc.upper():
+						fan_support = desc
+					
+					elif "JÄÄHDYTINTUKI" in desc.upper() or "JÄÄHDYTYS" in desc.upper() or "EDESSÄ" in desc.upper() or "KATOSSA" in desc.upper():
+						cooling = desc
+					
+					elif "LAAJENNUSPAIKAT" in desc.upper() or "ETUPANEELIN" in desc.upper():
+						slots = desc
+
+					elif "PAINO" in desc.upper():
+						weight = desc
+					
 					print("Case")
 				elif "/fi/Product/List/000-00M" in get_category:
 					print("Addin")
@@ -386,7 +416,17 @@ def data_scraper(base_URL, all_product_links):
 				"TDP": gpu_list[5],
 			}
 			
-
+			case_dict = {
+				"Model": model,
+				"Case type": case_type,
+				"Dimensions": dimensions,
+				"Color": color,
+				"Materials": materials,
+				"Fan support": fan_support,
+				"Cooling": cooling,
+				"Slots": slots,
+				"Weight": weight,
+			}
 					
 			## Do the insertion of data to the database		
 
