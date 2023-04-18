@@ -307,6 +307,16 @@ def data_scraper(base_URL, all_product_links):
 				socket = None
 				cpu_cooler = None
 				igpu = None
+				model = None
+				case_type = None
+				dimensions = None
+				color = None
+				materials = None
+				fan_support = None
+				cooling = None
+				slots = None
+				weight = None
+
 				
 				## Into these if statements, do as i've done in the gpu part already
 				if "/fi/Product/List/000-00K" in get_category:
@@ -355,10 +365,39 @@ def data_scraper(base_URL, all_product_links):
 							memory_compatibility = desc
 							
 
-					
 				elif "/fi/Product/List/000-00J" in get_category:
 					part_type = "case"
-					print("Case")
+					
+					if "KOTELOT" in trimmed_name.upper():
+						trimmed_name = trimmed_name.upper().strip("KOTELOT").strip().capitalize()
+
+					if "MALLI" in desc.upper():
+						model = desc
+					
+					elif "KOTELOTYYPPI" in desc.upper():
+						case_type = desc
+
+					elif "MITAT" in desc.upper():
+						dimensions = desc
+
+					elif "VÄRI" in desc.upper():
+						color = desc
+					
+					elif "MATERIAALIT" in desc.upper():
+						materials = desc
+					
+					elif "TUULETINTUKI" in desc.upper() or "EDESSÄ" in desc.upper() or "KATOSSA" in desc.upper() or "TAKANA" in desc.upper():
+						fan_support = desc
+					
+					elif "JÄÄHDYTINTUKI" in desc.upper() or "JÄÄHDYTYS" in desc.upper() or "EDESSÄ" in desc.upper() or "KATOSSA" in desc.upper():
+						cooling = desc
+					
+					elif "LAAJENNUSPAIKAT" in desc.upper() or "ETUPANEELIN" in desc.upper():
+						slots = desc
+
+					elif "PAINO" in desc.upper():
+						weight = desc
+					
 
 				elif "/fi/Product/List/000-00M" in get_category:
 					part_type = "addin"
@@ -367,7 +406,24 @@ def data_scraper(base_URL, all_product_links):
 
 				elif "/fi/Product/List/000-00N" in get_category:
 					part_type = "ram"
-					print("RAM")
+			
+					if "MUISTIT" in trimmed_name.upper():
+						trimmed_name = trimmed_name.upper().strip("MUISTIT").strip().capitalize()
+					
+					if "KAPASITEETTI" in desc.upper():
+						capacity = desc
+					
+					elif "NOPEUS" in desc.upper():
+						speed = desc
+					
+					elif "LATENSSI:" in desc.upper():
+						latency = desc
+						
+					elif "JÄNNITE" in desc.upper():
+						voltage = desc
+						
+					elif "RANK" in desc.upper():
+						rank = desc
 
 				elif "/fi/Product/List/000-00P" in get_category:
 					part_type = "gpu"
@@ -394,7 +450,6 @@ def data_scraper(base_URL, all_product_links):
 						tdp = desc
 
 
-
 				elif "/fi/Product/List/000-00R" in get_category:
 					part_type = "cpu"
 					
@@ -407,11 +462,13 @@ def data_scraper(base_URL, all_product_links):
 					print("Something went wrong. Category:", get_category)
 					
 			part_lists_dict = {
-				"storage_list": [trimmed_name, capacity, form_factor, interface ,cache ,flash, tbw],
+				"storage_list": [trimmed_name, capacity, form_factor, interface, cache, flash, tbw],
 				"mobo_list": [chipset, form_factor, memory_compatibility],
 				"gpu_list": [cores, clock, memory, interface, size, tdp],
 				"cpu_list": [core_count, thread_count, base_clock, l3_cache, socket, cpu_cooler, tdp, igpu],
+				"case": [model, case_type, dimensions, color, materials, fan_support, cooling, slots, weight],
 			}
+
 
 			if part_type == "storage":
 				item_list = part_lists_dict["storage_list"]
@@ -421,6 +478,8 @@ def data_scraper(base_URL, all_product_links):
 				item_list = part_lists_dict["gpu_list"]
 			elif part_type == "cpu":
 				item_list = part_lists_dict["cpu_list"]
+			elif part_type == "case":
+				item_list = part_lists_dict["case_list"]
 				
 			item_list = trim_list(item_list)
 
@@ -484,7 +543,18 @@ def data_scraper(base_URL, all_product_links):
 					"Integrated GPU": item_list[7],
 				}
 			
-
+			elif part_type == "case":
+				case_dict = {
+					"Model": model,
+					"Case type": case_type,
+					"Dimensions": dimensions,
+					"Color": color,
+					"Materials": materials,
+					"Fan support": fan_support,
+					"Cooling": cooling,
+					"Slots": slots,
+					"Weight": weight,
+				}
 					
 			## Do the insertion of data to the database		
 
