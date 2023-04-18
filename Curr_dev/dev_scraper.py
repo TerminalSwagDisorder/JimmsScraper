@@ -395,6 +395,10 @@ def data_scraper(base_URL, all_product_links):
 			}
 
 			storage_dict = {
+				"URL": curr_link,
+                "Price": m_price,
+                "Name": trimmed_name,
+                "Manufacturer": m_manufacturer,
 				"Capacity": capacity,
 				"Form factor": form_factor,
 				"Interface": interface,
@@ -417,15 +421,19 @@ def data_scraper(base_URL, all_product_links):
 			}
 			
 			case_dict = {
-				"Model": model,
-				"Case type": case_type,
-				"Dimensions": dimensions,
-				"Color": color,
-				"Materials": materials,
-				"Fan support": fan_support,
-				"Cooling": cooling,
-				"Slots": slots,
-				"Weight": weight,
+				"URL": curr_link,
+                "Price": m_price,
+                "Name": trimmed_name,
+                "Manufacturer": m_manufacturer,
+				"Model": model[0],
+				"Case type": case_type[1],
+				"Dimensions": dimensions[2],
+				"Color": color[3],
+				"Materials": materials[4],
+				"Fan support": fan_support[5],
+				"Cooling": cooling[6],
+				"Slots": slots[7],
+				"Weight": weight[8],
 			}
 					
 			## Do the insertion of data to the database		
