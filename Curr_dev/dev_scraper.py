@@ -30,6 +30,19 @@ def main():
 	get_category, desc_list = data_scraper(base_URL, all_product_links)
 	data_prep(get_category, desc_list)
 
+
+
+def trim_list(item_list):
+	for i, item in enumerate(item_list):
+		if item and item != None:
+			data = item.split(":", 1)
+			if len(data) > 1:
+				item_list[i] = data[1].strip().capitalize()
+			else:
+				item_list[i] = item.strip().capitalize()
+	return item_list
+
+
 def check_record_exists(session, main_parts, name):
 	# Check if item exists in database
 	for single_part in main_parts:
@@ -201,26 +214,53 @@ def data_scraper(base_URL, all_product_links):
 		# Get the description
 		results_item = item_soup.find("div", itemprop="description")
 
-		# Get motherboard chipset
-		chipset_data = results_item.select_one("strong:-soup-contains('Piirisarja')")
-		print("chipset_data:", chipset_data)
-		next_to_chipset = chipset_data.find_next("strong")
-		print("next_to_chipset:", next_to_chipset)
+		# Get motherboard chipset from description
+		chipset_location = results_item.select_one("strong:-soup-contains('Piirisarja')")
+		chipset_list = []
 		
-		if chipset_data and next_to_chipset and chipset_data is not None:
-			siblings = chipset_data.find_next_siblings(string = True)
-			print("siblings:", siblings)
-			chipset_list = []
-			for sibling in siblings:
-				if sibling == next_to_chipset:
-					break
-				elif sibling.name in ["strong"]:
-					break
+		if chipset_location is not None:
+			chipset_data = chipset_location.find_next_siblings(string = True)
+			for item in chipset_data:
+				if item != ":" and item is not None and item not in chipset_list:
+					chipset_list.append(item)
+			chipset_list = chipset_list[0]
+		else:
+			chipset_list = None
+		
+		# Get motherboard form factor from description
+		ff_location = results_item.select_one("strong:-soup-contains('Emolevyn tyyppi')")
+		ff_list = []
+		
+		if ff_location is not None:
+			ff_data = ff_location.find_next_siblings(string = True)
+			for item in ff_data:
+				if item != ":" and item is not None and item not in ff_list:
+					ff_list.append(item)
+			ff_list = ff_list[0]
+		else:
+			ff_list = None
+		
+		# Get motherboard form factor from description
+		mobo_memory_location = results_item.select_one("strong:-soup-contains('Muisti')")
+		mobo_memory_list = []
+		
+		if mobo_memory_location is not None:
+			mobo_memory_data = mobo_memory_location.find_next_siblings(string = True)
+			for item in mobo_memory_data:
+				if item != ":" and item is not None and item not in mobo_memory_list:
+					mobo_memory_list.append(item)
+			mobo_memory_list = mobo_memory_list[0]
+			if "," in mobo_memory_list:
+				mobo_memory_list = mobo_memory_list.split(",", 1)
+				if len(mobo_memory_list) > 1:
+					mobo_memory_list = mobo_memory_list[0].strip()
 				else:
-					chipset_list.append(sibling.string.strip())
-			print("\n\n\n\n", chipset_list)
-						
-					
+					mobo_memory_list = mobo_memory_list
+		else:
+			mobo_memory_list = None
+
+		print(mobo_memory_list)
+
 
 		
 		# Get all of the description data and trim it
@@ -251,15 +291,27 @@ def data_scraper(base_URL, all_product_links):
 				cache = None
 				flash = None
 				tbw = None
+				chipset = None
+				form_factor = None
+				memory_compatibility = None
 				cores = None
 				clock = None
 				memory = None
 				interface = None
 				size = None
 				tdp = None
+				core_count = None
+				thread_count = None
+				base_clock = None
+				l3_cache = None
+				socket = None
+				cpu_cooler = None
+				igpu = None
 				
 				## Into these if statements, do as i've done in the gpu part already
 				if "/fi/Product/List/000-00K" in get_category:
+					part_type = "storage"
+					
 					if "SSD-LEVY" in trimmed_name.upper():
 						trimmed_name = trimmed_name.upper().strip("SSD-LEVY").strip().capitalize()
 					
@@ -282,16 +334,44 @@ def data_scraper(base_URL, all_product_links):
 						tbw = desc
 						
 				elif "/fi/Product/List/000-00H" in get_category:
-					if "EMOLEVYN TYYPPI" in desc.upper():
-						pass
+					part_type = "mobo"
+					
+					if "PIIRISARJATYYPPI" in desc.upper() or chipset_list is not None:
+						if chipset_list is not None:
+							chipset = chipset_list
+						else:
+							chipset = desc
+
+					elif "TUOTTEEN TYYPPI" in desc.upper() or ff_list is not None:
+						if ff_list is not None:
+							form_factor = ff_list
+						else:
+							form_factor = desc
+
+					elif "DDR" in desc.upper() and not "ADDRESS" in desc.upper() or mobo_memory_list is not None:
+						if mobo_memory_list is not None:
+							memory_compatibility = mobo_memory_list
+						else:
+							memory_compatibility = desc
+							
+
 					
 				elif "/fi/Product/List/000-00J" in get_category:
+					part_type = "case"
 					print("Case")
+
 				elif "/fi/Product/List/000-00M" in get_category:
+					part_type = "addin"
 					print("Addin")
+
+
 				elif "/fi/Product/List/000-00N" in get_category:
+					part_type = "ram"
 					print("RAM")
+
 				elif "/fi/Product/List/000-00P" in get_category:
+					part_type = "gpu"
+
 					if "NÄYTÖNOHJAIN" in trimmed_name.upper():
 						trimmed_name = trimmed_name.upper().strip("NÄYTÖNOHJAIN").strip().rstrip("-").strip().capitalize()
 						
@@ -316,49 +396,93 @@ def data_scraper(base_URL, all_product_links):
 
 
 				elif "/fi/Product/List/000-00R" in get_category:
-					print("CPU")
+					part_type = "cpu"
+					
+					
 				elif "/fi/Product/List/000-00U" in get_category:
+					part_type = "psu"
 					print("PSU")
 
 				else:
 					print("Something went wrong. Category:", get_category)
 					
-			gpu_list = [cores, clock, memory, interface, size, tdp]
-
-			for i, item in enumerate(gpu_list):
-				if item and item != None:
-					data = item.split(":", 1)
-					if len(data) > 1:
-						gpu_list[i] = data[1].strip().capitalize()
-					else:
-						gpu_list[i] = item.strip().capitalize()
-
-			if gpu_list[5] and gpu_list[5] != None:
-				if "VÄHINTÄÄN" in gpu_list[5].upper():
-					gpu_list[5] = gpu_list[5].upper().strip("VÄHINTÄÄN")
-
-			## Create dictionaries for all parts, like this	
-			storage_dict = {
-				"Capacity": capacity,
-				"Form factor": form_factor,
-				"Interface": interface,
-				"Cache": cache,
-				"Flash": flash,
-				"TBW": tbw,
+			part_lists_dict = {
+				"storage_list": [trimmed_name, capacity, form_factor, interface ,cache ,flash, tbw],
+				"mobo_list": [chipset, form_factor, memory_compatibility],
+				"gpu_list": [cores, clock, memory, interface, size, tdp],
+				"cpu_list": [core_count, thread_count, base_clock, l3_cache, socket, cpu_cooler, tdp, igpu],
 			}
-			
-			gpu_dict = {
-				"URL": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Cores": gpu_list[0],
-				"Core Clock": gpu_list[1],
-				"Memory": gpu_list[2],
-				"Interface": gpu_list[3],
-				"Size": gpu_list[4],
-				"TDP": gpu_list[5],
-			}
+
+			if part_type == "storage":
+				item_list = part_lists_dict["storage_list"]
+			elif part_type == "mobo":
+				item_list = part_lists_dict["mobo_list"]
+			elif part_type == "gpu":
+				item_list = part_lists_dict["gpu_list"]
+			elif part_type == "cpu":
+				item_list = part_lists_dict["cpu_list"]
+				
+			item_list = trim_list(item_list)
+
+			if part_type == "gpu" and item_list[5] and item_list[5] != None:
+				if "VÄHINTÄÄN" in item_list[5].upper():
+					item_list[5] = item_list[5].upper().strip("VÄHINTÄÄN")
+
+			## Create dictionaries for all parts, like this
+			if part_type == "storage":
+				storage_dict = {
+					"URL": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Capacity": item_list[0],
+					"Form factor": item_list[1],
+					"Interface": item_list[2],
+					"Cache": item_list[3],
+					"Flash": item_list[4],
+					"TBW": item_list[5],
+				}
+				
+			elif part_type == "mobo":
+				motherboard_dict = {
+					"URL": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Chipset": item_list[0],
+					"Form factor": item_list[1],
+					"Memory compatibility": item_list[2],
+				}
+				
+			elif part_type == "gpu":
+				gpu_dict = {
+					"URL": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Cores": item_list[0],
+					"Core Clock": item_list[1],
+					"Memory": item_list[2],
+					"Interface": item_list[3],
+					"Size": item_list[4],
+					"TDP": item_list[5],
+				}
+				
+			elif part_type == "cpu":
+				cpu_dict = {
+					"URL": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Core Count": item_list[0],
+					"Thread Count": item_list[1],
+					"Base Clock": item_list[2],
+					"L3 Cache": item_list[3],
+					"Socket": item_list[4],
+					"Cpu Cooler": item_list[5],
+					"TDP": item_list[6],
+					"Integrated GPU": item_list[7],
+				}
 			
 
 					

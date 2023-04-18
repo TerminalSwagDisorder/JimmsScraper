@@ -53,10 +53,8 @@ class CPU(UniversalComponents):
 		Column("Core Count", TEXT),
 		Column("Thread Count", TEXT),
 		Column("Base Clock", TEXT),
-		Column("Boost Clock", TEXT),
 		Column("L3 Cache", TEXT),
 		Column("Socket", TEXT),
-		Column("PCie Version", TEXT),
 		Column("Cpu Cooler", TEXT),
 		Column("TDP", TEXT),
 		Column("Integrated GPU", TEXT)
@@ -88,9 +86,9 @@ class Motherboard(UniversalComponents):
 	__tablename__ = "motherboard"
 
 	__table_args__ = (
+		Column("Chipset", TEXT),
 		Column("Form factor", TEXT),
-		Column("Mermory Type", TEXT),
-		Column("Memory Slots", TEXT)
+		Column("Memory compatibility", TEXT),
 	)
 
 class Memory(UniversalComponents):
