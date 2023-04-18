@@ -88,9 +88,8 @@ class Motherboard(UniversalComponents):
 	__tablename__ = "motherboard"
 
 	__table_args__ = (
-		Column("Color", TEXT),
+		Column("Form factor", TEXT),
 		Column("Mermory Type", TEXT),
-		Column("Memory Max", TEXT),
 		Column("Memory Slots", TEXT)
 	)
 
@@ -107,8 +106,11 @@ class Storage(UniversalComponents):
 
 	__table_args__ = (
 		Column("Capacity", TEXT),
-		Column("Type", TEXT),
-		Column("Interface", TEXT)
+		Column("Form factor", TEXT),
+		Column("Interface", TEXT),
+		Column("Cache", TEXT),
+		Column("Flash", TEXT),
+		Column("TBW", TEXT)
 	)
 
 class PSU(UniversalComponents):

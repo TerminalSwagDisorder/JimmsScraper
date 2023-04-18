@@ -17,7 +17,7 @@ def main():
 	# Urls for jimms
 	base_URL = "https://www.jimms.fi"
 	product_URL = "/fi/Product/Show/"
-	component_URL = ["/fi/Product/List/000-00P/komponentit--naytonohjaimet"]
+	component_URL = ["/fi/Product/List/000-00H/komponentit--emolevyt"]
 	component_URL2 = ["https://www.jimms.fi/fi/Product/Show/187728/tuf-rtx4070ti-o12g-gaming/asus-geforce-rtx-4070-ti-tuf-gaming-oc-edition-naytonohjain-12gb-gddr6x-asus-cashback-70"]
 	component_temp = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
 	## Note that component_URL is currently only for gpu. Just copy the contents of component_temp there if you want to do something with all parts
@@ -76,7 +76,7 @@ def check_record_exists(session, main_parts, name):
 def get_subpages(base_URL, component_URL, driver):
 	index_pages_dict = {}
 	
-	#Get subpages for all components
+	# Get subpages for all components
 	try: 
 		for item in component_URL:
 			parameter = "?p="
@@ -178,6 +178,10 @@ def data_scraper(base_URL, all_product_links):
 		# Get price
 		meta_price = item_soup.find("meta", {"property": "product:price:amount"})
 		m_price = meta_price["content"]
+		
+		# Get description in different form
+		meta_desc = item_soup.find("meta", {"property": "og:description"})
+		m_desc = meta_desc["content"]
 
 
 		# Get the name
@@ -192,11 +196,34 @@ def data_scraper(base_URL, all_product_links):
 					
 		trimmed_name = name_list[1].split(",", 1)
 		trimmed_name = trimmed_name[0].strip().capitalize()
-
-
-		# Get the description data and trim it
-		results_item = item_soup.find("div", itemprop="description")
 		
+		
+		# Get the description
+		results_item = item_soup.find("div", itemprop="description")
+
+		# Get motherboard chipset
+		chipset_data = results_item.select_one("strong:-soup-contains('Piirisarja')")
+		print("chipset_data:", chipset_data)
+		next_to_chipset = chipset_data.find_next("strong")
+		print("next_to_chipset:", next_to_chipset)
+		
+		if chipset_data and next_to_chipset and chipset_data is not None:
+			siblings = chipset_data.find_next_siblings(string = True)
+			print("siblings:", siblings)
+			chipset_list = []
+			for sibling in siblings:
+				if sibling == next_to_chipset:
+					break
+				elif sibling.name in ["strong"]:
+					break
+				else:
+					chipset_list.append(sibling.string.strip())
+			print("\n\n\n\n", chipset_list)
+						
+					
+
+		
+		# Get all of the description data and trim it
 		print("Current page:", curr_link)
 		desc_data = results_item.select_one("strong:-soup-contains('Tekniset tiedot')")
 		if desc_data is not None:
@@ -217,11 +244,47 @@ def data_scraper(base_URL, all_product_links):
 			#pprint(desc_list)
 
 			for desc in desc_list:
+				trimmed_name = None
+				capacity = None
+				form_factor = None
+				interface = None
+				cache = None
+				flash = None
+				tbw = None
+				cores = None
+				clock = None
+				memory = None
+				interface = None
+				size = None
+				tdp = None
+				
 				## Into these if statements, do as i've done in the gpu part already
 				if "/fi/Product/List/000-00K" in get_category:
-					print("Drive")
+					if "SSD-LEVY" in trimmed_name.upper():
+						trimmed_name = trimmed_name.upper().strip("SSD-LEVY").strip().capitalize()
+					
+					if "KAPASITEETTI" in desc.upper():
+						capacity = desc
+					
+					elif "FORM FACTOR" in desc.upper() or "M.2 TYYPPI" in desc.upper():
+						form_factor = desc
+					
+					elif "VÄYLÄ:" in desc.upper() or "LIITÄNTÄ" in desc.upper():
+						interface = desc
+						
+					elif "CACHE" in desc.upper() or "DRAM" in desc.upper():
+						cache = desc
+						
+					elif "MUISTITYYPPI" in desc.upper() or "TALLENNUSMUISTI" in desc.upper() or "FLASH" in desc.upper():
+						flash = desc
+						
+					elif "TBW" in desc.upper():
+						tbw = desc
+						
 				elif "/fi/Product/List/000-00H" in get_category:
-					print("Mobo")
+					if "EMOLEVYN TYYPPI" in desc.upper():
+						pass
+					
 				elif "/fi/Product/List/000-00J" in get_category:
 					print("Case")
 				elif "/fi/Product/List/000-00M" in get_category:
@@ -263,16 +326,27 @@ def data_scraper(base_URL, all_product_links):
 			gpu_list = [cores, clock, memory, interface, size, tdp]
 
 			for i, item in enumerate(gpu_list):
-				data = item.split(":", 1)
-				if len(data) > 1:
-					gpu_list[i] = data[1].strip().capitalize()
-				else:
-					gpu_list[i] = item.strip().capitalize()
+				if item and item != None:
+					data = item.split(":", 1)
+					if len(data) > 1:
+						gpu_list[i] = data[1].strip().capitalize()
+					else:
+						gpu_list[i] = item.strip().capitalize()
 
-			if "VÄHINTÄÄN" in gpu_list[5].upper():
-				gpu_list[5] = gpu_list[5].upper().strip("VÄHINTÄÄN")
+			if gpu_list[5] and gpu_list[5] != None:
+				if "VÄHINTÄÄN" in gpu_list[5].upper():
+					gpu_list[5] = gpu_list[5].upper().strip("VÄHINTÄÄN")
 
 			## Create dictionaries for all parts, like this	
+			storage_dict = {
+				"Capacity": capacity,
+				"Form factor": form_factor,
+				"Interface": interface,
+				"Cache": cache,
+				"Flash": flash,
+				"TBW": tbw,
+			}
+			
 			gpu_dict = {
 				"URL": curr_link,
 				"Price": m_price,
@@ -285,12 +359,13 @@ def data_scraper(base_URL, all_product_links):
 				"Size": gpu_list[4],
 				"TDP": gpu_list[5],
 			}
+			
 
 					
 			## Do the insertion of data to the database		
 
-			pprint(gpu_dict)
-			print("\n")
+			#pprint(gpu_dict)
+			#print("\n")
 
 
 main()
