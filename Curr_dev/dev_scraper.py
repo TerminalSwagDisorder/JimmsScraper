@@ -387,9 +387,32 @@ def data_scraper(base_URL, all_product_links):
 					
 
 				elif "/fi/Product/List/000-00M" in get_category:
-					part_type = "addin"
-					print("Addin")
+					part_type = "adding"
 
+					if "LISÄKORTIT" in trimmed_name.upper():
+						trimmed_name = trimmed_name.upper().strip("LISÄKORTIT").strip().capitalize()
+
+					if "SISÄÄNTULO" in desc.upper() or "VÄYLÄ" in desc.upper() or "KAISTOJEN" in desc.upper() or "TIEDONSIIRTONOPEUS" in desc.upper() or "YHTEENSOPIVUUS" in desc.upper():
+						ingress = desc
+
+					if "OMINAISUUDET" in desc.upper():
+						characteristics = desc
+					
+					elif "KÄYTTÖTAAJUUS" in desc.upper():
+						frequency = desc
+
+					elif "PAINO" in desc.upper():
+						weight = desc
+
+					elif "VERKKOSTANDARDIT" in desc.upper():
+						network_standards = desc
+					
+					elif "BLUETOOTH" in desc.upper():
+						bluetooth = desc
+
+					elif "VIRTALÄHDE" in desc.upper():
+						power_source = desc
+					
 
 				elif "/fi/Product/List/000-00N" in get_category:
 					part_type = "ram"
@@ -455,7 +478,6 @@ def data_scraper(base_URL, all_product_links):
 				"cpu_list": [core_count, thread_count, base_clock, l3_cache, socket, cpu_cooler, tdp, igpu],
 				"case": [model, case_type, dimensions, color, materials, fan_support, cooling, slots, weight],
 			}
-
 
 			if part_type == "storage":
 				item_list = part_lists_dict["storage_list"]
@@ -530,17 +552,50 @@ def data_scraper(base_URL, all_product_links):
 					"TDP": item_list[6],
 					"Integrated GPU": item_list[7],
 				}
+
+			elif part_type == "ram":
+				ram_dict = {
+					"URL": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Capacity": item_list[0],
+					"Speed": item_list[1],
+					"Latency": item_list[2],
+					"Voltage": item_list[3],
+					"Rank": item_list[4],
+				}
+			
 			elif part_type == "case":
 				case_dict = {
-					"Model": model,
-					"Case type": case_type,
-					"Dimensions": dimensions,
-					"Color": color,
-					"Materials": materials,
-					"Fan support": fan_support,
-					"Cooling": cooling,
-					"Slots": slots,
-					"Weight": weight,
+					"URL": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Model": item_list[0],
+					"Case type": item_list[1],
+					"Dimensions": item_list[2],
+					"Color": item_list[3],
+					"Materials": item_list[4],
+					"Fan support": item_list[5],
+					"Cooling": item_list[6],
+					"Slots": item_list[7],
+					"Weight": item_list[8],
+				}
+
+			elif part_type == "adding":
+				adding_dict = {
+					"URL": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Ingress": item_list[0],
+					"Characteristics": item_list[1],
+					"frequency": item_list[2],					
+					"weight": item_list[3],
+					"network_standards": item_list[4],
+					"bluetooth": item_list[5],
+					"bluetooth": power_source[6],
 				}
 					
 			## Do the insertion of data to the database		
