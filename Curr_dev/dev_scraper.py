@@ -28,7 +28,6 @@ def main():
 	index_pages_dict = get_subpages(base_URL, component_URL, driver)
 	all_product_links = get_urls(base_URL, index_pages_dict)
 	get_category, desc_list = data_scraper(base_URL, all_product_links)
-	data_prep(get_category, desc_list)
 
 
 def get_meta(item_soup, metasearch):
@@ -234,29 +233,37 @@ def data_scraper(base_URL, all_product_links):
 		
 		
 		chipset_list = strong_search(results_item, "Piirisarja")
-		ff_list = strong_search(results_item, "Emolevyn tyyppi")
+		mobo_ff_list = strong_search(results_item, "Emolevyn tyyppi")
 		mobo_memory_list = strong_search(results_item, "Muisti")
+		capacity_list = strong_search(results_item, "Kapasiteetti")
+		storage_ff_list = strong_search(results_item, "Form Factor")
+		interface_list = strong_search(results_item, "Liitäntä")
+		interface_list = strong_search(results_item, "Väylä")
+		storage_dram_list = strong_search(results_item, "DRAM")
+		nand_list = strong_search(results_item, "NAND Flash")
+		tbw_list = strong_search(results_item, "TBW")
 
 		
 		# Get all of the description data and trim it
 		print("Current page:", curr_link)
 		desc_data = results_item.select_one("strong:-soup-contains('Tekniset tiedot')")
 		if desc_data is not None:
-			trimmed_data = desc_data.find_all_next(recursive = False)
 			desc_list = []
-			for item in trimmed_data:
-				if item.name in ["div", "a"]:
-					#print("break:", item.name)
-					break
+			trimmed_data = desc_data.find_next_siblings(string = True)
+			if len(trimmed_data) <= 2:
+				desc_data_p = desc_data.find_parent()
+				trimmed_data = desc_data_p.find_next_siblings()
+				print("trimmed", trimmed_data)
 
-				elif item.name in ["p", "strong", "span", "li", "ul"]:
-					for desc in item.stripped_strings:
-						if desc and desc not in desc_list:
-							#print(desc)
-							desc_list.append(desc)
+				
+			for item in trimmed_data:
+				for desc in item.stripped_strings:
+					desc_list.append(desc)
+
+
 			sleep(0.1)
 			#pprint(name_list)
-			#pprint(desc_list)
+			pprint(desc_list)
 
 			capacity = None
 			form_factor = None
@@ -299,23 +306,29 @@ def data_scraper(base_URL, all_product_links):
 					if "SSD-LEVY" in trimmed_name.upper():
 						trimmed_name = trimmed_name.upper().strip("SSD-LEVY").strip().capitalize()
 					
-					if "KAPASITEETTI" in desc.upper():
+					if "KAPASITEETTI" in desc.upper() or "MUISTIN KOKO" in desc.upper() or capacity_list is not None:
 						capacity = desc
+
 					
-					elif "FORM FACTOR" in desc.upper() or "M.2 TYYPPI" in desc.upper():
+					elif "FORM FACTOR" in desc.upper() or "M.2 TYYPPI" in desc.upper() or storage_ff_list is not None:
 						form_factor = desc
+
 					
-					elif "VÄYLÄ:" in desc.upper() or "LIITÄNTÄ" in desc.upper():
+					elif "VÄYLÄ:" in desc.upper() or "LIITÄNTÄ" in desc.upper() or "LIITÄNNÄT" in desc.upper() or interface_list is not None:
 						interface = desc
+
 						
-					elif "CACHE" in desc.upper() or "DRAM" in desc.upper():
+					elif "CACHE" in desc.upper() or "DRAM" in desc.upper() or storage_dram_list is not None:
 						cache = desc
+
 						
-					elif "MUISTITYYPPI" in desc.upper() or "TALLENNUSMUISTI" in desc.upper() or "FLASH" in desc.upper():
+					elif "MUISTITYYPPI" in desc.upper() or "TALLENNUSMUISTI" in desc.upper() or "FLASH" in desc.upper() or nand_list is not None:
 						flash = desc
+
 						
-					elif "TBW" in desc.upper():
+					elif "TBW" in desc.upper() or tbw_list is not None:
 						tbw = desc
+
 						
 				elif "/fi/Product/List/000-00H" in get_category:
 					part_type = "mobo"
@@ -326,9 +339,9 @@ def data_scraper(base_URL, all_product_links):
 						else:
 							chipset = desc
 
-					elif "TUOTTEEN TYYPPI" in desc.upper() or ff_list is not None:
-						if ff_list is not None:
-							form_factor = ff_list
+					elif "TUOTTEEN TYYPPI" in desc.upper() or mobo_ff_list is not None:
+						if mobo_ff_list is not None:
+							form_factor = mobo_ff_list
 						else:
 							form_factor = desc
 
