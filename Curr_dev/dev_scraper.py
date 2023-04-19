@@ -397,7 +397,7 @@ def data_scraper(base_URL, all_product_links):
 					elif "PÖLYSUOTIMET" in desc.upper():
 						dust_filters = desc
 					
-					elif "VIRTALÄHDETUKI" in desc.upper():
+					elif "VIRTALÄHDETUKI" in desc.upper() or "VIRTALÄHDE" in desc.upper():
 						power_supply_support = desc
 
 					elif "PUMPPU" in desc.upper():
@@ -413,7 +413,7 @@ def data_scraper(base_URL, all_product_links):
 					if "LISÄKORTIT" in trimmed_name.upper():
 						trimmed_name = trimmed_name.upper().strip("LISÄKORTIT").strip().capitalize()
 
-					if "SISÄÄNTULO" in desc.upper() or "VÄYLÄ" in desc.upper() or "KAISTOJEN" in desc.upper() or "TIEDONSIIRTONOPEUS" in desc.upper() or "YHTEENSOPIVUUS" in desc.upper():
+					if "SISÄÄNTULO" in desc.upper() or "SISÄÄNTULO VÄYLÄ" in desc.upper() or "SISÄÄNTULO KAISTOJEN" in desc.upper() or "SISÄÄNTULO TIEDONSIIRTONOPEUS" in desc.upper() or "SISÄÄNTULO YHTEENSOPIVUUS" in desc.upper():
 						ingress = desc
 
 					if "OMINAISUUDET" in desc.upper():
@@ -442,6 +442,12 @@ def data_scraper(base_URL, all_product_links):
 
 					elif "MUUTA" in desc.upper() or "PIIRISARJA" in desc.upper():
 						change = desc
+
+					elif "TUETUT OMINAISUUDET" in desc.upper():
+						supported_features = desc
+
+					elif "SUORITIN" in desc.upper() or "MUISTI" in desc.upper():
+						general = desc
 
 				elif "/fi/Product/List/000-00N" in get_category:
 					part_type = "ram"
@@ -664,6 +670,7 @@ def data_scraper(base_URL, all_product_links):
 					"Form factor": item_list[7],
 					"Output": item_list[8],
 					"Change": item_list[9],
+					"Supported features": item_list[10],
 				}
 					
 			## Do the insertion of data to the database		
