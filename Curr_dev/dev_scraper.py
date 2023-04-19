@@ -367,24 +367,45 @@ def data_scraper(base_URL, all_product_links):
 					elif "MITAT" in desc.upper():
 						dimensions = desc
 
-					elif "VÄRI" in desc.upper():
+					elif "VÄRI" in desc.upper() or "ULKOINEN VÄRI" in desc.upper():
 						color = desc
 					
 					elif "MATERIAALIT" in desc.upper():
 						materials = desc
 					
-					elif "TUULETINTUKI" in desc.upper() or "EDESSÄ" in desc.upper() or "KATOSSA" in desc.upper() or "TAKANA" in desc.upper():
+					elif "TUULETINTUKI" in desc.upper() or "TUULETINTUKI EDESSÄ" in desc.upper() or "TUULETINTUKI KATOSSA" in desc.upper() or "TUULETINTUKI TAKANA" in desc.upper():
 						fan_support = desc
 					
 					elif "JÄÄHDYTINTUKI" in desc.upper() or "JÄÄHDYTYS" in desc.upper() or "EDESSÄ" in desc.upper() or "KATOSSA" in desc.upper():
 						cooling = desc
 					
-					elif "LAAJENNUSPAIKAT" in desc.upper() or "ETUPANEELIN" in desc.upper():
+					elif "LAAJENNUSPAIKAT" in desc.upper() or "ETUPANEELIN" in desc.upper() or "LAITEPAIKAT" in desc.upper():
 						slots = desc
 
-					elif "PAINO" in desc.upper():
+					elif "PAINO" in desc.upper():  
 						weight = desc
 					
+					elif "TILAVUUS" in desc.upper():
+						volume = desc
+
+					elif "YHTEENSOPIVUUS" in desc.upper():
+						compatibility = desc
+
+					elif "MAKSIMIMITAT" in desc.upper() or "MAKSIMIMITAT CPU-COOLERIN" in desc.upper() or "MAKSIMIMITAT VIRTALÄHTEEN PITUUS" in desc.upper() or "MAKSIMIMITAT NÄYTÖNOHJAIMEN PITUUS" in desc.upper() or "MAKSIMIMITAT NÄYTÖNOHJAIMEN LEVEYS" in desc.upper() or "MAKSIMIMITAT NÄYTÖNOHJAIMEN KORKEUS" in desc.upper():
+						maximum_dimensions = desc	
+
+					elif "PÖLYSUOTIMET" in desc.upper():
+						dust_filters = desc
+					
+					elif "VIRTALÄHDETUKI" in desc.upper():
+						power_supply_support = desc
+
+					elif "PUMPPU" in desc.upper():
+						pump = desc
+
+					elif "TUULETINPAIKAT" in desc.upper() or "TUULETINPAIKAT EDESSÄ" in desc.upper() or "TUULETINPAIKAT KATOSSA" in desc.upper() or "TUULETINPAIKAT TAKANA" in desc.upper():
+						fan_positions = desc
+
 
 				elif "/fi/Product/List/000-00M" in get_category:
 					part_type = "addin"
@@ -410,9 +431,17 @@ def data_scraper(base_URL, all_product_links):
 					elif "BLUETOOTH" in desc.upper():
 						bluetooth = desc
 
-					elif "VIRTALÄHDE" in desc.upper():
-						power_source = desc
-					
+					elif "MALLI" in desc.upper():
+						model = desc
+
+					elif "FORM FACTOR" in desc.upper():
+						form_factor = desc
+
+					elif "ULOSLÄHTÖ" in desc.upper() or "VÄYLÄT" in desc.upper() or "TIEDONSIIRTONOPEUS" in desc.upper() or "PORTTIEN" in desc.upper() or "LIITÄNNÄT" in desc.upper():
+						output = desc
+
+					elif "MUUTA" in desc.upper() or "PIIRISARJA" in desc.upper():
+						change = desc
 
 				elif "/fi/Product/List/000-00N" in get_category:
 					part_type = "ram"
@@ -434,6 +463,28 @@ def data_scraper(base_URL, all_product_links):
 						
 					elif "RANK" in desc.upper():
 						rank = desc
+
+					elif "KÄYTTÖLÄMPÖTILA ALUE" in desc.upper():
+						temperature_range = desc
+
+					elif "FORMAATTI" in desc.upper():
+						formats = desc
+
+					elif "PINNIEN MÄÄRÄ" in desc.upper():
+						pins_number  = desc
+
+					elif "INTEL XMP 2.0 TUKI" in desc.upper():
+						intel_support  = desc
+
+					elif "LID" in desc.upper() or "LID VALO" in desc.upper():
+						lid  = desc
+					
+					elif "OHJELMISTOHALLINTA" in desc.upper():
+						software_management = desc
+
+					elif "LÄMMÖNLEVITTÄJÄ" in desc.upper():
+						heat_spreader = desc
+
 
 				elif "/fi/Product/List/000-00P" in get_category:
 					part_type = "gpu"
@@ -564,6 +615,13 @@ def data_scraper(base_URL, all_product_links):
 					"Latency": item_list[2],
 					"Voltage": item_list[3],
 					"Rank": item_list[4],
+					"Temperature range": item_list[5],
+					"Formats": item_list[6],
+					"Pins number": item_list[7],
+					"Intel support": item_list[8],
+					"LID": item_list[9],
+					"Software management": item_list[10],
+					"Heat spreader": item_list[11],
 				}
 			
 			elif part_type == "case":
@@ -581,21 +639,31 @@ def data_scraper(base_URL, all_product_links):
 					"Cooling": item_list[6],
 					"Slots": item_list[7],
 					"Weight": item_list[8],
+					"Volume": item_list[9],
+					"Compatibility": item_list[10],
+					"Maximum dimensions": item_list[11],
+					"Dust filters": item_list[12],
+					"Power supply support": item_list[13],
+					"Fan positions": item_list[14],
+					"Pump": item_list[15],
 				}
 
-			elif part_type == "adding":
-				adding_dict = {
+			elif part_type == "addin":
+				addin_dict = {
 					"URL": curr_link,
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
 					"Ingress": item_list[0],
 					"Characteristics": item_list[1],
-					"frequency": item_list[2],					
-					"weight": item_list[3],
-					"network_standards": item_list[4],
+					"Frequency": item_list[2],					
+					"Weight": item_list[3],
+					"Network standards": item_list[4],
 					"bluetooth": item_list[5],
-					"bluetooth": power_source[6],
+					"Model": item_list[6],
+					"Form factor": item_list[7],
+					"Output": item_list[8],
+					"Change": item_list[9],
 				}
 					
 			## Do the insertion of data to the database		
