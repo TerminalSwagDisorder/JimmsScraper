@@ -387,7 +387,7 @@ def data_scraper(base_URL, all_product_links):
 					
 
 				elif "/fi/Product/List/000-00M" in get_category:
-					part_type = "adding"
+					part_type = "addin"
 
 					if "LISÄKORTIT" in trimmed_name.upper():
 						trimmed_name = trimmed_name.upper().strip("LISÄKORTIT").strip().capitalize()
