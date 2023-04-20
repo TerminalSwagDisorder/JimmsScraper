@@ -346,7 +346,6 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 						desc_list.append(desc)
 
 
-
 		sleep(0.1)
 
 		#pprint(name_list)
@@ -354,9 +353,10 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 
 
 		# Use special searches in case of bad HTML formatting
-		chipset_list = strong_search(results_item, "Piirisarja")
-		mobo_ff_list = strong_search(results_item, "Emolevyn tyyppi")
-		mobo_memory_list = strong_search(results_item, "Muisti")
+		if "/fi/Product/List/000-00H" in get_category:
+			chipset_list = strong_search(results_item, "Piirisarja")
+			mobo_ff_list = strong_search(results_item, "Emolevyn tyyppi")
+			mobo_memory_list = strong_search(results_item, "Muisti")
 
 		# Initialize upcoming variables
 		capacity = None
