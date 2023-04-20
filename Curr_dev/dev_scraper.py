@@ -15,7 +15,6 @@ from pprint import pprint as pprint
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import table, column, select, update, insert, delete, text
-from sqlalchemy.ext.declarative import *
 from sqlalchemy import create_engine
 
 
@@ -24,7 +23,7 @@ def main():
 	base_URL = "https://www.jimms.fi"
 	product_URL = "/fi/Product/Show/"
 	component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
-
+	
 	# Create selenium instance
 	driver_path = "./chromedriver_win32/chromedriver.exe"
 	driver = webdriver.Chrome(executable_path = driver_path)
@@ -48,109 +47,21 @@ def database_connection():
 	session = Session()
 	metadata = MetaData()
 
-	CPU = Table("cpu", metadata,
-		Column("ID", INTEGER, primary_key = True, autoincrement = True),
-		Column("Url", TEXT),
-		Column("Price", TEXT),
-		Column("Name", TEXT),
-		Column("Manufacturer", TEXT),
-		Column("Core Count", TEXT),
-		Column("Thread Count", TEXT),
-		Column("Base Clock", TEXT),
-		Column("L3 Cache", TEXT),
-		Column("Socket", TEXT),
-		Column("Cpu Cooler", TEXT),
-		Column("TDP", TEXT),
-		Column("Integrated GPU", TEXT)
-	)
+	CPU = database.CPU.__table__
 
-	GPU = Table("gpu", metadata,
-		Column("ID", INTEGER, primary_key = True, autoincrement = True),
-		Column("Url", TEXT),
-		Column("Price", TEXT),
-		Column("Name", TEXT),
-		Column("Manufacturer", TEXT),
-		Column("Cores", TEXT),
-		Column("Core Clock", TEXT),
-		Column("Memory", TEXT),
-		Column("Interface", TEXT),
-		Column("Dimensions", TEXT),
-		Column("TDP", TEXT)
-	)
+	GPU = database.GPU.__table__
 
-	Cooler = Table("cpu cooler", metadata,
-		Column("ID", INTEGER, primary_key = True, autoincrement = True),
-		Column("Url", TEXT),
-		Column("Price", TEXT),
-		Column("Name", TEXT),
-		Column("Manufacturer", TEXT),
-		Column("Compatibility", TEXT),
-		Column("Cooling Potential", TEXT),
-		Column("Fan RPM", TEXT),
-		Column("Noise Level", TEXT),
-		Column("Dimensions", TEXT)
-	)
+	Cooler = database.Cooler.__table__
 
-	Motherboard = Table("motherboard", metadata,
-		Column("ID", INTEGER, primary_key = True, autoincrement = True),
-		Column("Url", TEXT),
-		Column("Price", TEXT),
-		Column("Name", TEXT),
-		Column("Manufacturer", TEXT),
-		Column("Chipset", TEXT),
-		Column("Form Factor", TEXT),
-		Column("Memory Compatibility", TEXT)
-	)
+	Motherboard = database.Motherboard.__table__
 
-	Memory = Table("memory", metadata,
-		Column("ID", INTEGER, primary_key = True, autoincrement = True),
-		Column("Url", TEXT),
-		Column("Price", TEXT),
-		Column("Name", TEXT),
-		Column("Manufacturer", TEXT),
-		Column("Type", TEXT),
-		Column("Amount", TEXT),
-		Column("Speed", TEXT),
-		Column("Latency", TEXT)
-	)
+	Memory = database.Memory.__table__
 
-	Storage = Table("storage", metadata,
-		Column("ID", INTEGER, primary_key = True, autoincrement = True),
-		Column("Url", TEXT),
-		Column("Price", TEXT),
-		Column("Name", TEXT),
-		Column("Manufacturer", TEXT),
-		Column("Capacity", TEXT),
-		Column("Form Factor", TEXT),
-		Column("Interface", TEXT),
-		Column("Cache", TEXT),
-		Column("Flash", TEXT),
-		Column("TBW", TEXT)
-	)
+	Storage = database.Storage.__table__
 
-	PSU = Table("psu", metadata,
-		Column("ID", INTEGER, primary_key = True, autoincrement = True),
-		Column("Url", TEXT),
-		Column("Price", TEXT),
-		Column("Name", TEXT),
-		Column("Manufacturer", TEXT),
-		Column("Is ATX12V", TEXT),
-		Column("Efficiency", TEXT),
-		Column("Modular", TEXT),
-		Column("Dimensions", TEXT)
-	)
+	PSU = database.PSU.__table__
 
-	Case = Table("case", metadata,
-		Column("ID", INTEGER, primary_key = True, autoincrement = True),
-		Column("Url", TEXT),
-		Column("Price", TEXT),
-		Column("Name", TEXT),
-		Column("Manufacturer", TEXT),
-		Column("Case type", TEXT),
-		Column("Dimensions", TEXT),
-		Column("Color", TEXT),
-		Column("Compatibility", TEXT)
-	)
+	Case = database.Case.__table__
 
 	return engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case
 
@@ -176,6 +87,7 @@ def strong_search(results_item, strong_desc):
 
 	else:
 		strong_list = None
+
 
 	return strong_list
 
@@ -799,5 +711,6 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 			session.execute(i)
 			session.commit()
 
+	sleep(0.1)
 
 main()
