@@ -294,9 +294,6 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 		m_desc = get_meta(item_soup, {"property": "og:description"})
 
 
-
-
-
 		# Get the name
 		name_location = item_soup.find("h1")
 		name_item = name_location.find_all("span", itemprop="name")
@@ -801,8 +798,6 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 			i = insert(Cooler).values(cooler_dict)
 			session.execute(i)
 			session.commit()
-
-
 
 
 main()
