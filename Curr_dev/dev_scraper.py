@@ -17,9 +17,7 @@ def main():
 	# Urls for jimms
 	base_URL = "https://www.jimms.fi"
 	product_URL = "/fi/Product/Show/"
-	component_URL = ["/fi/Product/List/000-00J/komponentit--kotelot"]
-	component_URL2 = ["https://www.jimms.fi/fi/Product/Show/187728/tuf-rtx4070ti-o12g-gaming/asus-geforce-rtx-4070-ti-tuf-gaming-oc-edition-naytonohjain-12gb-gddr6x-asus-cashback-70"]
-	component_temp = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
+	component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 
 	driver_path = "./chromedriver_win32/chromedriver.exe"
 
@@ -273,7 +271,6 @@ def data_scraper(base_URL, all_product_links):
 		chipset_list = strong_search(results_item, "Piirisarja")
 		mobo_ff_list = strong_search(results_item, "Emolevyn tyyppi")
 		mobo_memory_list = strong_search(results_item, "Muisti")
-		#case_dimensions_list = strong_search(results_item, "Mitat")
 
 		# Initialize upcoming variables
 		capacity = None
@@ -285,11 +282,18 @@ def data_scraper(base_URL, all_product_links):
 		chipset = None
 		form_factor = None
 		memory_compatibility = None
+		case_type = None
+		dimensions = None
+		color = None
+		compatibility = None
+		mem_type = None
+		amount = None
+		speed = None
+		latency = None
 		cores = None
 		clock = None
 		memory = None
 		interface = None
-		size = None
 		tdp = None
 		core_count = None
 		thread_count = None
@@ -297,22 +301,17 @@ def data_scraper(base_URL, all_product_links):
 		l3_cache = None
 		socket = None
 		cpu_cooler = None
+		tdp = None
 		igpu = None
-		model = None
-		case_type = None
-		dimensions = None
-		color = None
-		materials = None
-		fan_support = None
-		cooling = None
-		slots = None
-		weight = None
-		case_type = None
-		dimensions = None
-		color = None
+		atx12v = None
+		efficiency = None
+		modular = None
 		compatibility = None
+		cooling_potential = None
+		fan_rpm = None
+		noise_level = None
 
-
+		# Depending on what category is active, sort the data to the respective variables
 		for desc in desc_list:
 
 			if "/fi/Product/List/000-00K" in get_category:
@@ -355,14 +354,14 @@ def data_scraper(base_URL, all_product_links):
 					elif chipset is None:
 						chipset = desc
 
-				if any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if mobo_ff_list is not None:
 						form_factor = mobo_ff_list
 					elif form_factor is None:
 						form_factor = desc
 
 
-				if any(s in desc.upper() for s in ["DIMM"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["DIMM"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if mobo_memory_list is not None:
 						memory_compatibility = mobo_memory_list
 					elif memory_compatibility is None:
@@ -376,7 +375,7 @@ def data_scraper(base_URL, all_product_links):
 					if case_type is None:
 						case_type = desc
 
-				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["MITAT"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
 						dimensions = desc
 						
@@ -392,103 +391,180 @@ def data_scraper(base_URL, all_product_links):
 			elif "/fi/Product/List/000-00N" in get_category:
 				part_type = "ram"
 
-				if "MUISTIT" in trimmed_name.upper():
-					trimmed_name = trimmed_name.upper().strip("MUISTIT").strip().capitalize()
+				if any(s in desc.upper() for s in ["TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if mem_type is None:
+						mem_type = desc
 
-				if "KAPASITEETTI" in desc.upper():
-					capacity = desc
+				elif any(s in desc.upper() for s in ["KAPASITEETTI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if amount is None:
+						amount = desc
 
-				elif "NOPEUS" in desc.upper():
-					speed = desc
+				elif any(s in desc.upper() for s in ["NOPEUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if speed is None:
+						speed = desc
 
-				elif "LATENSSI:" in desc.upper():
-					latency = desc
+				elif any(s in desc.upper() for s in ["LATENSSI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if latency is None:
+						latency = desc
 
-				elif "JÄNNITE" in desc.upper():
-					voltage = desc
-
-				elif "RANK" in desc.upper():
-					rank = desc
-
-				elif "KÄYTTÖLÄMPÖTILA ALUE" in desc.upper():
-					temperature_range = desc
-
-				elif "FORMAATTI" in desc.upper():
-					formats = desc
-
-				elif "PINNIEN MÄÄRÄ" in desc.upper():
-					pins_number  = desc
-
-				elif "INTEL XMP 2.0 TUKI" in desc.upper():
-					intel_support  = desc
-
-				elif "LID" in desc.upper() or "LID VALO" in desc.upper():
-					lid  = desc
-
-				elif "OHJELMISTOHALLINTA" in desc.upper():
-					software_management = desc
-
-				elif "LÄMMÖNLEVITTÄJÄ" in desc.upper():
-					heat_spreader = desc
 
 
 			elif "/fi/Product/List/000-00P" in get_category:
 				part_type = "gpu"
 
 				if "NÄYTÖNOHJAIN" in trimmed_name.upper():
-					trimmed_name = trimmed_name.upper().strip("NÄYTÖNOHJAIN").strip().rstrip("-").strip().capitalize()
+					trimmed_name = trimmed_name.upper().strip("NÄYTÖNOHJAIN").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
 
-				if "CUDA" in desc.upper() or "STREAM-PROSESSORIT" in desc.upper():
-					cores = desc
+				if any(s in desc.upper() for s in ["CUDA", "STREAM-PROSESSORIT"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if cores is None:
+						cores = desc
 
-				elif "BOOST" in desc.upper() or "KELLOTAAJUUS" in desc.upper() and "MHZ" in desc.upper():
-					clock = desc
+				elif any(s in desc.upper() for s in ["BOOST", "KELLOTAAJUUS"]) and "MHZ" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if clock is None:
+						clock = desc
 
-				elif "MÄÄRÄ" in desc.upper():
-					memory = desc
+				elif any(s in desc.upper() for s in ["MÄÄRÄ"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if memory is None:
+						memory = desc
 
-				elif "VÄYLÄ" in desc.upper() and not "MUISTIVÄYLÄ" in desc.upper():
-					interface = desc
+				elif any(s in desc.upper() for s in ["VÄYLÄ"]) and not "MUISTIVÄYLÄ" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if interface is None:
+						interface = desc
 
-				elif "MITAT" in desc.upper() or "PITUUS" in desc.upper():
-					size = desc
+				elif any(s in desc.upper() for s in ["MITAT", "PITUUS", "KXLXS", "LXPXK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if dimensions is None:
+						dimensions = desc
 
-				elif "TDP" in desc.upper() or "VIRTALÄHTE" in desc.upper():
-					tdp = desc
+				elif any(s in desc.upper() for s in ["TDP", "VIRTALÄHTE"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if tdp is None:
+						tdp = desc
 
 
 			elif "/fi/Product/List/000-00R" in get_category:
 				part_type = "cpu"
+				
+				if any(s in desc.upper() for s in ["YDINTEN MÄÄRÄ"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if core_count is None:
+						core_count = desc
+
+				elif any(s in desc.upper() for s in ["THREADIEN MÄÄRÄ"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if thread_count is None:
+						thread_count = desc
+						
+				elif any(s in desc.upper() for s in ["KELLOTAAJUUS", "BASE CLOCK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if base_clock is None:
+						base_clock = desc
+						
+				elif any(s in desc.upper() for s in ["L3"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if l3_cache is None:
+						l3_cache = desc
+
+				elif any(s in desc.upper() for s in ["KANTA", "YHTEENSOPIVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if socket is None:
+						socket = desc
+
+				elif any(s in desc.upper() for s in ["JÄÄHDYTYS", "YHTEENSOPIVUUS"]) and not "EI SIS" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if cpu_cooler is None:
+						cpu_cooler = desc
+				
+				elif any(s in desc.upper() for s in ["TDP"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if tdp is None:
+						tdp = desc
+
+				elif any(s in desc.upper() for s in ["NÄYTÖNOHJAIN", "RADEON", "VEGA"]) and not "EI SIS" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if igpu is None:
+						igpu = desc
 
 
 			elif "/fi/Product/List/000-00U" in get_category:
 				part_type = "psu"
-				print("PSU")
+				
+				if any(s in desc.upper() for s in ["ATX12V", "ATX 12 V"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if atx12v is None:
+						atx12v = "True"
+
+				elif any(s in desc.upper() for s in ["80 PLUS", "HYÖTYSUHDE"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if efficiency is None:
+						efficiency = desc
+
+				elif any(s in desc.upper() for s in ["MODULAARINEN", "MODULAR", "MODULAARISUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if modular is None:
+						if "TÄYSIN" in desc.upper():
+							modular = "Fully modular"
+						elif "SEMI" in desc.upper():
+							modular = "Semi modular"
+						else:
+							modular = desc
+
+				elif any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if dimensions is None:
+						dimensions = desc
+
+
+
+			elif "/fi/Product/List/000-104" in get_category:
+				part_type = "cooler"
+
+				if "PROSESSORIJÄÄHDYTIN" in trimmed_name.upper():
+					trimmed_name = trimmed_name.upper().strip("PROSESSORIJÄÄHDYTIN").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
+
+				elif "VAKIO PROSESSORIJÄÄHDYTIN" in trimmed_name.upper():
+					trimmed_name = trimmed_name.upper().strip("VAKIO PROSESSORIJÄÄHDYTIN").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
+					trimmed_name = "Intel stock cooler" + trimmed_name
+
+				if any(s in desc.upper() for s in ["YHTEENSOPIVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if compatibility is None:
+						compatibility = desc
+
+				if any(s in desc.upper() for s in ["TDP"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if cooling_potential is None:
+						cooling_potential = desc
+
+				if any(s in desc.upper() for s in ["NOPEUS", "RPM"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if fan_rpm is None:
+						fan_rpm = desc
+
+				if any(s in desc.upper() for s in ["MELU", "DBA"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if noise_level is None:
+						noise_level = desc
+
+				if any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if dimensions is None:
+						dimensions = desc
 
 			else:
 				print("Something went wrong. Category:", get_category)
-
+		
+		# Create a dictionary with all of the chosen data
 		part_lists_dict = {
 			"storage_list": [capacity, form_factor, interface, cache, flash, tbw],
 			"mobo_list": [chipset, form_factor, memory_compatibility],
-			"gpu_list": [cores, clock, memory, interface, size, tdp],
-			"cpu_list": [core_count, thread_count, base_clock, l3_cache, socket, cpu_cooler, tdp, igpu],
 			"case_list": [case_type, dimensions, color, compatibility],
+			"ram_list": [mem_type, amount, speed, latency],
+			"gpu_list": [cores, clock, memory, interface, dimensions, tdp],
+			"cpu_list": [core_count, thread_count, base_clock, l3_cache, socket, cpu_cooler, tdp, igpu],
+			"psu_list": [atx12v, efficiency, modular, dimensions],
+			"psu_list": [compatibility, cooling_potential, fan_rpm, noise_level, dimensions],
 		}
-
+		
+		# Choose the correct dictionary
 		if part_type == "storage":
 			item_list = part_lists_dict["storage_list"]
 		elif part_type == "mobo":
 			item_list = part_lists_dict["mobo_list"]
+		elif part_type == "case":
+			item_list = part_lists_dict["case_list"]
+		elif part_type == "ram":
+			item_list = part_lists_dict["ram_list"]
 		elif part_type == "gpu":
 			item_list = part_lists_dict["gpu_list"]
 		elif part_type == "cpu":
 			item_list = part_lists_dict["cpu_list"]
-		elif part_type == "case":
-			item_list = part_lists_dict["case_list"]
+		elif part_type == "psu":
+			item_list = part_lists_dict["psu_list"]
 
-		pprint(item_list)
 		item_list = trim_list(item_list)
+		pprint(item_list)
 
 		# Final trimming
 		if part_type == "gpu" and item_list[5] and item_list[5] != None:
@@ -497,8 +573,11 @@ def data_scraper(base_URL, all_product_links):
 
 		if part_type == "mobo" and item_list[2] and item_list[2] != None:
 			item_list[2] = item_list[2].strip(",")
+			
+		if part_type == "cpu" and item_list[0] and item_list[0] != None:
+			item_list[0] = item_list[0].strip("-ydin")
 
-		## Create dictionaries for all parts, like this
+		# Create final dictionaries for all parts, ready for database insertion
 		if part_type == "storage":
 			storage_dict = {
 				"URL": curr_link,
@@ -514,7 +593,7 @@ def data_scraper(base_URL, all_product_links):
 			}
 
 		elif part_type == "mobo":
-			motherboard_dict = {
+			mobo_dict = {
 				"URL": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
@@ -522,6 +601,31 @@ def data_scraper(base_URL, all_product_links):
 				"Chipset": item_list[0],
 				"Form factor": item_list[1],
 				"Memory compatibility": item_list[2],
+			}
+
+		elif part_type == "case":
+			case_dict = {
+				"URL": curr_link,
+				"Price": m_price,
+				"Name": trimmed_name,
+				"Manufacturer": m_manufacturer,
+				"Case type": item_list[0],
+				"Dimensions": item_list[1],
+				"Color": item_list[2],
+				"Compatibility": item_list[3],
+
+			}
+
+		elif part_type == "ram":
+			ram_dict = {
+				"URL": curr_link,
+				"Price": m_price,
+				"Name": trimmed_name,
+				"Manufacturer": m_manufacturer,
+				"Type": item_list[0],
+				"Amount": item_list[1],
+				"Speed": item_list[2],
+				"Latency": item_list[3],
 			}
 
 		elif part_type == "gpu":
@@ -553,38 +657,21 @@ def data_scraper(base_URL, all_product_links):
 				"TDP": item_list[6],
 				"Integrated GPU": item_list[7],
 			}
-
-		elif part_type == "ram":
-			ram_dict = {
+			
+		elif part_type == "psu":
+			cpu_dict = {
 				"URL": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
-				"Capacity": item_list[0],
-				"Speed": item_list[1],
-				"Latency": item_list[2],
-				"Voltage": item_list[3],
-				"Rank": item_list[4],
-				"Temperature range": item_list[5],
-				"Formats": item_list[6],
-				"Pins number": item_list[7],
-				"Intel support": item_list[8],
-				"LID": item_list[9],
-				"Software management": item_list[10],
-				"Heat spreader": item_list[11],
-			}
-
-		elif part_type == "case":
-			case_dict = {
-				"URL": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Case type": item_list[0],
-				"Dimensions": item_list[1],
-				"Color": item_list[2],
-				"Compatibility": item_list[3],
-
+				"Core Count": item_list[0],
+				"Thread Count": item_list[1],
+				"Base Clock": item_list[2],
+				"L3 Cache": item_list[3],
+				"Socket": item_list[4],
+				"Cpu Cooler": item_list[5],
+				"TDP": item_list[6],
+				"Integrated GPU": item_list[7],
 			}
 
 

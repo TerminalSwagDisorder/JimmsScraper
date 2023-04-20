@@ -68,18 +68,19 @@ class GPU(UniversalComponents):
 		Column("Memory", TEXT),
 		Column("Core Clock", TEXT),
 		Column("Interface", TEXT),
-		Column("Size", TEXT),
-		Column("TDP", TEXT),
+		Column("Dimensions", TEXT),
+		Column("TDP", TEXT)
 	)
 
 class Cooler(UniversalComponents):
 	__tablename__ = "cpu cooler"
 
 	__table_args__ = (
-		Column("Color", TEXT),
+		Column("Compatibility", TEXT),
+		Column("Cooling Potential", TEXT),
 		Column("Fan RPM", TEXT),
 		Column("Noise Level", TEXT),
-		Column("Height", TEXT)
+		Column("Dimensions", TEXT)
 	)
 
 class Motherboard(UniversalComponents):
@@ -87,16 +88,18 @@ class Motherboard(UniversalComponents):
 
 	__table_args__ = (
 		Column("Chipset", TEXT),
-		Column("Form factor", TEXT),
-		Column("Memory compatibility", TEXT),
+		Column("Form Factor", TEXT),
+		Column("Memory Compatibility", TEXT)
 	)
 
 class Memory(UniversalComponents):
 	__tablename__ = "memory"
 
 	__table_args__ = (
-		Column("Modules", TEXT),
-		Column("Color", TEXT)
+		Column("Type", TEXT),
+		Column("Amount", TEXT),
+		Column("Speed", TEXT),
+		Column("Latency", TEXT)
 	)
 
 class Storage(UniversalComponents):
@@ -104,7 +107,7 @@ class Storage(UniversalComponents):
 
 	__table_args__ = (
 		Column("Capacity", TEXT),
-		Column("Form factor", TEXT),
+		Column("Form Factor", TEXT),
 		Column("Interface", TEXT),
 		Column("Cache", TEXT),
 		Column("Flash", TEXT),
@@ -115,7 +118,9 @@ class PSU(UniversalComponents):
 	__tablename__ = "psu"
 
 	__table_args__ = (
-		Column("is_ATX12V", TEXT),
+		Column("Is ATX12V", TEXT),
+		Column("Efficiency", TEXT),
+		Column("Modular", TEXT),
 		Column("Dimensions", TEXT)
 	)
 
@@ -124,7 +129,7 @@ class Case(UniversalComponents):
 
 	__table_args__ = (
 		Column("Color", TEXT),
-		Column("Size", TEXT),
+		Column("Dimensions", TEXT),
 		Column("Materials", TEXT),
 		Column("Compatibility", TEXT)
 
