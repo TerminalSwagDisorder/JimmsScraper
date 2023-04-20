@@ -36,8 +36,8 @@ Base = declarative_base()
 class UniversalComponents(Base):
 	__abstract__ = True
 	ID = Column("ID", INTEGER, primary_key = True, autoincrement = True)
-	Price = Column("Price", TEXT)
 	Url = Column("Url", TEXT)
+	Price = Column("Price", TEXT)
 	Name = Column("Name", TEXT)
 	Manufacturer = Column("Manufacturer", TEXT)
 
@@ -53,10 +53,8 @@ class CPU(UniversalComponents):
 		Column("Core Count", TEXT),
 		Column("Thread Count", TEXT),
 		Column("Base Clock", TEXT),
-		Column("Boost Clock", TEXT),
 		Column("L3 Cache", TEXT),
 		Column("Socket", TEXT),
-		Column("PCie Version", TEXT),
 		Column("Cpu Cooler", TEXT),
 		Column("TDP", TEXT),
 		Column("Integrated GPU", TEXT)
@@ -67,39 +65,41 @@ class GPU(UniversalComponents):
 
 	__table_args__ = (
 		Column("Cores", TEXT),
-		Column("Memory", TEXT),
 		Column("Core Clock", TEXT),
+		Column("Memory", TEXT),
 		Column("Interface", TEXT),
-		Column("Size", TEXT),
-		Column("TDP", TEXT),
+		Column("Dimensions", TEXT),
+		Column("TDP", TEXT)
 	)
 
 class Cooler(UniversalComponents):
 	__tablename__ = "cpu cooler"
 
 	__table_args__ = (
-		Column("Color", TEXT),
+		Column("Compatibility", TEXT),
+		Column("Cooling Potential", TEXT),
 		Column("Fan RPM", TEXT),
 		Column("Noise Level", TEXT),
-		Column("Height", TEXT)
+		Column("Dimensions", TEXT)
 	)
 
 class Motherboard(UniversalComponents):
 	__tablename__ = "motherboard"
 
 	__table_args__ = (
-		Column("Color", TEXT),
-		Column("Mermory Type", TEXT),
-		Column("Memory Max", TEXT),
-		Column("Memory Slots", TEXT)
+		Column("Chipset", TEXT),
+		Column("Form Factor", TEXT),
+		Column("Memory Compatibility", TEXT)
 	)
 
 class Memory(UniversalComponents):
 	__tablename__ = "memory"
 
 	__table_args__ = (
-		Column("Modules", TEXT),
-		Column("Color", TEXT)
+		Column("Type", TEXT),
+		Column("Amount", TEXT),
+		Column("Speed", TEXT),
+		Column("Latency", TEXT)
 	)
 
 class Storage(UniversalComponents):
@@ -107,15 +107,20 @@ class Storage(UniversalComponents):
 
 	__table_args__ = (
 		Column("Capacity", TEXT),
-		Column("Type", TEXT),
-		Column("Interface", TEXT)
+		Column("Form Factor", TEXT),
+		Column("Interface", TEXT),
+		Column("Cache", TEXT),
+		Column("Flash", TEXT),
+		Column("TBW", TEXT)
 	)
 
 class PSU(UniversalComponents):
 	__tablename__ = "psu"
 
 	__table_args__ = (
-		Column("is_ATX12V", TEXT),
+		Column("Is ATX12V", TEXT),
+		Column("Efficiency", TEXT),
+		Column("Modular", TEXT),
 		Column("Dimensions", TEXT)
 	)
 
@@ -123,9 +128,9 @@ class Case(UniversalComponents):
 	__tablename__ = "case"
 
 	__table_args__ = (
+		Column("Case type", TEXT),
+		Column("Dimensions", TEXT),
 		Column("Color", TEXT),
-		Column("Size", TEXT),
-		Column("Materials", TEXT),
 		Column("Compatibility", TEXT)
 
 	)
