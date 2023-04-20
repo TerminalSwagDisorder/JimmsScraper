@@ -4,6 +4,7 @@
 
 import database
 import requests
+from pathlib import Path
 from bs4 import BeautifulSoup
 from time import sleep as sleep
 from selenium import webdriver
@@ -11,27 +12,155 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from pprint import pprint as pprint
+from sqlalchemy import *
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import table, column, select, update, insert, delete, text
+from sqlalchemy.ext.declarative import *
+from sqlalchemy import create_engine
 
 
 def main():
 	# Urls for jimms
 	base_URL = "https://www.jimms.fi"
 	product_URL = "/fi/Product/Show/"
-	component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	component_URL = ["/fi/Product/List/000-00R/komponentit--prosessorit"]
+	component_URL2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 
 	driver_path = "./chromedriver_win32/chromedriver.exe"
 
-	driver = webdriver.Chrome(executable_path=driver_path)
-	
+	driver = webdriver.Chrome(executable_path = driver_path)
+
+	engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case = database_connection()
+
 	index_pages_dict = get_subpages(base_URL, component_URL, driver)
 	all_product_links = get_urls(base_URL, index_pages_dict)
-	data_scraper(base_URL, all_product_links)
+	data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case)
+	session.close()
+
+def database_connection():
+	# Location of current directory
+	fPath = Path(__file__).resolve()
+	dPath = fPath.parent
+	finPath = dPath.joinpath("database")
+	
+	# Create a connection to the database
+	engine = create_engine("sqlite:///" + str(finPath.joinpath("pcbuildwebsite_db.db")), echo=True, pool_pre_ping=True)
+	Session = sessionmaker(bind = engine)
+	session = Session()
+	metadata = MetaData()
+
+	CPU = Table("cpu", metadata,
+		Column("ID", INTEGER, primary_key = True, autoincrement = True),
+		Column("Url", TEXT),
+		Column("Price", TEXT),
+		Column("Name", TEXT),
+		Column("Manufacturer", TEXT),
+		Column("Core Count", TEXT),
+		Column("Thread Count", TEXT),
+		Column("Base Clock", TEXT),
+		Column("L3 Cache", TEXT),
+		Column("Socket", TEXT),
+		Column("Cpu Cooler", TEXT),
+		Column("TDP", TEXT),
+		Column("Integrated GPU", TEXT)
+	)
+
+	GPU = Table("gpu", metadata,
+		Column("ID", INTEGER, primary_key = True, autoincrement = True),
+		Column("Url", TEXT),
+		Column("Price", TEXT),
+		Column("Name", TEXT),
+		Column("Manufacturer", TEXT),
+		Column("Cores", TEXT),
+		Column("Core Clock", TEXT),
+		Column("Memory", TEXT),
+		Column("Interface", TEXT),
+		Column("Dimensions", TEXT),
+		Column("TDP", TEXT)
+	)
+
+	Cooler = Table("cpu cooler", metadata,
+		Column("ID", INTEGER, primary_key = True, autoincrement = True),
+		Column("Url", TEXT),
+		Column("Price", TEXT),
+		Column("Name", TEXT),
+		Column("Manufacturer", TEXT),
+		Column("Compatibility", TEXT),
+		Column("Cooling Potential", TEXT),
+		Column("Fan RPM", TEXT),
+		Column("Noise Level", TEXT),
+		Column("Dimensions", TEXT)
+	)
+
+	Motherboard = Table("motherboard", metadata,
+		Column("ID", INTEGER, primary_key = True, autoincrement = True),
+		Column("Url", TEXT),
+		Column("Price", TEXT),
+		Column("Name", TEXT),
+		Column("Manufacturer", TEXT),
+		Column("Chipset", TEXT),
+		Column("Form Factor", TEXT),
+		Column("Memory Compatibility", TEXT)
+	)
+
+	Memory = Table("memory", metadata,
+		Column("ID", INTEGER, primary_key = True, autoincrement = True),
+		Column("Url", TEXT),
+		Column("Price", TEXT),
+		Column("Name", TEXT),
+		Column("Manufacturer", TEXT),
+		Column("Type", TEXT),
+		Column("Amount", TEXT),
+		Column("Speed", TEXT),
+		Column("Latency", TEXT)
+	)
+
+	Storage = Table("storage", metadata,
+		Column("ID", INTEGER, primary_key = True, autoincrement = True),
+		Column("Url", TEXT),
+		Column("Price", TEXT),
+		Column("Name", TEXT),
+		Column("Manufacturer", TEXT),
+		Column("Capacity", TEXT),
+		Column("Form Factor", TEXT),
+		Column("Interface", TEXT),
+		Column("Cache", TEXT),
+		Column("Flash", TEXT),
+		Column("TBW", TEXT)
+	)
+
+	PSU = Table("psu", metadata,
+		Column("ID", INTEGER, primary_key = True, autoincrement = True),
+		Column("Url", TEXT),
+		Column("Price", TEXT),
+		Column("Name", TEXT),
+		Column("Manufacturer", TEXT),
+		Column("Is ATX12V", TEXT),
+		Column("Efficiency", TEXT),
+		Column("Modular", TEXT),
+		Column("Dimensions", TEXT)
+	)
+
+	Case = Table("case", metadata,
+		Column("ID", INTEGER, primary_key = True, autoincrement = True),
+		Column("Url", TEXT),
+		Column("Price", TEXT),
+		Column("Name", TEXT),
+		Column("Manufacturer", TEXT),
+		Column("Case type", TEXT),
+		Column("Dimensions", TEXT),
+		Column("Color", TEXT),
+		Column("Compatibility", TEXT)
+	)
+
+	return engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case
+
 
 
 def get_meta(item_soup, metasearch):
 		meta_location = item_soup.find("meta", metasearch)
 		metadata = meta_location["content"]
-	
+
 		return metadata
 
 def strong_search(results_item, strong_desc):
@@ -48,7 +177,7 @@ def strong_search(results_item, strong_desc):
 
 	else:
 		strong_list = None
-		
+
 	return strong_list
 
 
@@ -62,10 +191,10 @@ def trim_list(item_list):
 				item_list[i] = item.strip().capitalize()
 	return item_list
 
-			
+
 def get_subpages(base_URL, component_URL, driver):
 	index_pages_dict = {}
-	
+
 	# Get subpages for all components
 	try: 
 		for item in component_URL:
@@ -108,26 +237,26 @@ def get_subpages(base_URL, component_URL, driver):
 
 	driver.close()
 	driver.quit()
-	
+
 
 	return index_pages_dict
-	
+
 def get_urls(base_URL, index_pages_dict):
 	all_product_links = []
-	
+
 	# Get links for all the products
 	for key, value in index_pages_dict.items():
 		for index in value:
 			curr_url = base_URL + key + index
 			print(curr_url)
-			
+
 			# Parse and iterate through the html using bs4
 			try: 
 				product_list_page = requests.get(curr_url)
 				next_soup = BeautifulSoup(product_list_page.content, "html.parser")
 				page_content = next_soup.find("div", class_="product-list-wrapper")
 				product_name = page_content.find_all("h5", class_="product-box-name")
-				
+
 
 				# Get the actual link for each item
 				for item in product_name:
@@ -144,45 +273,45 @@ def get_urls(base_URL, index_pages_dict):
 				print(f"Error while processing {curr_url}: {e}")
 			else:
 				print(f"{len(all_product_links)} links found")
-					
+
 
 	return all_product_links
 
-def data_scraper(base_URL, all_product_links):
-	
+def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case):
+
 	for product in all_product_links:
 		curr_link = base_URL + product
 		item_page = requests.get(curr_link, allow_redirects=True)
 		item_soup = BeautifulSoup(item_page.content, "html.parser")
-		
+
 		# Get product category
 		category_link = item_soup.find_all("a", class_="link-secondary")[2]
 		get_category = category_link.get("href")
 
 
-		## Testing getting the data with metadata
+		# Testing getting the data with metadata
 		m_manufacturer = get_meta(item_soup, {"property": "product:brand"})
 		m_price = get_meta(item_soup, {"property": "product:price:amount"})
 		m_desc = get_meta(item_soup, {"property": "og:description"})
-		
-		
-		
+
+
+
 
 
 		# Get the name
 		name_location = item_soup.find("h1")
 		name_item = name_location.find_all("span", itemprop="name")
-		
+
 		name_list = []
 		for name in name_item:
 			for trim in name.stripped_strings:
 				if trim and trim not in name_list:
 					name_list.append(trim)
-					
+
 		trimmed_name = name_list[1].split(",", 1)
 		trimmed_name = trimmed_name[0].strip().capitalize()
-		
-		
+
+
 		# Get the description
 		results_item = item_soup.find("div", itemprop="description")
 
@@ -193,7 +322,7 @@ def data_scraper(base_URL, all_product_links):
 		if desc_data is not None:
 			desc_list = []
 			trimmed_data = desc_data.find_next_siblings(string = True)
-			
+
 			# If there is no data or bad data, try another method for getting it
 			if len(trimmed_data) <= 2 or any(line.startswith(":") and len(line) > 1 for line in trimmed_data):
 				trimmed_data_p = results_item.contents
@@ -215,7 +344,7 @@ def data_scraper(base_URL, all_product_links):
 				for item in trimmed_data:
 					for desc in item.stripped_strings:
 						desc_list.append(desc)
-						
+
 
 
 		sleep(0.1)
@@ -327,7 +456,7 @@ def data_scraper(base_URL, all_product_links):
 
 			elif "/fi/Product/List/000-00J" in get_category:
 				part_type = "case"
-				
+
 				if any(s in desc.upper() for s in ["KOTELOTYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if case_type is None:
 						case_type = desc
@@ -335,7 +464,7 @@ def data_scraper(base_URL, all_product_links):
 				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
 						dimensions = desc
-						
+
 				elif any(s in desc.upper() for s in ["VÄRI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if color is None:
 						color = desc
@@ -399,7 +528,7 @@ def data_scraper(base_URL, all_product_links):
 
 			elif "/fi/Product/List/000-00R" in get_category:
 				part_type = "cpu"
-				
+
 				if any(s in desc.upper() for s in ["YDINTEN MÄÄRÄ"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if core_count is None:
 						core_count = desc
@@ -407,11 +536,11 @@ def data_scraper(base_URL, all_product_links):
 				elif any(s in desc.upper() for s in ["THREADIEN MÄÄRÄ"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if thread_count is None:
 						thread_count = desc
-						
+
 				elif any(s in desc.upper() for s in ["KELLOTAAJUUS", "BASE CLOCK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if base_clock is None:
 						base_clock = desc
-						
+
 				elif any(s in desc.upper() for s in ["L3"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if l3_cache is None:
 						l3_cache = desc
@@ -423,7 +552,7 @@ def data_scraper(base_URL, all_product_links):
 				elif any(s in desc.upper() for s in ["JÄÄHDYTYS", "YHTEENSOPIVUUS"]) and not "EI SIS" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if cpu_cooler is None:
 						cpu_cooler = desc
-				
+
 				elif any(s in desc.upper() for s in ["TDP"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if tdp is None:
 						tdp = desc
@@ -435,7 +564,7 @@ def data_scraper(base_URL, all_product_links):
 
 			elif "/fi/Product/List/000-00U" in get_category:
 				part_type = "psu"
-				
+
 				if any(s in desc.upper() for s in ["ATX12V", "ATX 12 V"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if atx12v is None:
 						atx12v = "True"
@@ -491,7 +620,7 @@ def data_scraper(base_URL, all_product_links):
 
 			else:
 				print("Something went wrong. Category:", get_category)
-		
+
 		# Create a dictionary with all of the chosen data
 		part_lists_dict = {
 			"storage_list": [capacity, form_factor, interface, cache, flash, tbw],
@@ -503,7 +632,7 @@ def data_scraper(base_URL, all_product_links):
 			"psu_list": [atx12v, efficiency, modular, dimensions],
 			"cooler_list": [compatibility, cooling_potential, fan_rpm, noise_level, dimensions],
 		}
-		
+
 		# Choose the correct dictionary
 		if part_type == "storage":
 			item_list = part_lists_dict["storage_list"]
@@ -532,14 +661,14 @@ def data_scraper(base_URL, all_product_links):
 
 		if part_type == "mobo" and item_list[2] and item_list[2] != None:
 			item_list[2] = item_list[2].strip(",")
-			
+
 		if part_type == "cpu" and item_list[0] and item_list[0] != None:
 			item_list[0] = item_list[0].strip("-ydin")
 
 		# Create final dictionaries for all parts, ready for database insertion
 		if part_type == "storage":
 			storage_dict = {
-				"URL": curr_link,
+				"Url": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
@@ -557,7 +686,7 @@ def data_scraper(base_URL, all_product_links):
 
 		elif part_type == "mobo":
 			mobo_dict = {
-				"URL": curr_link,
+				"Url": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
@@ -572,7 +701,7 @@ def data_scraper(base_URL, all_product_links):
 
 		elif part_type == "case":
 			case_dict = {
-				"URL": curr_link,
+				"Url": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
@@ -589,7 +718,7 @@ def data_scraper(base_URL, all_product_links):
 
 		elif part_type == "ram":
 			ram_dict = {
-				"URL": curr_link,
+				"Url": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
@@ -605,7 +734,7 @@ def data_scraper(base_URL, all_product_links):
 
 		elif part_type == "gpu":
 			gpu_dict = {
-				"URL": curr_link,
+				"Url": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
@@ -623,7 +752,7 @@ def data_scraper(base_URL, all_product_links):
 
 		elif part_type == "cpu":
 			cpu_dict = {
-				"URL": curr_link,
+				"Url": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
@@ -640,10 +769,10 @@ def data_scraper(base_URL, all_product_links):
 			i = insert(CPU).values(cpu_dict)
 			session.execute(i)
 			session.commit()
-			
+
 		elif part_type == "psu":
 			psu_dict = {
-				"URL": curr_link,
+				"Url": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
@@ -656,10 +785,10 @@ def data_scraper(base_URL, all_product_links):
 			i = insert(PSU).values(psu_dict)
 			session.execute(i)
 			session.commit()
-		
+
 		elif part_type == "cooler":
 			cooler_dict = {
-				"URL": curr_link,
+				"Url": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
