@@ -36,8 +36,8 @@ Base = declarative_base()
 class UniversalComponents(Base):
 	__abstract__ = True
 	ID = Column("ID", INTEGER, primary_key = True, autoincrement = True)
-	Price = Column("Price", TEXT)
 	Url = Column("Url", TEXT)
+	Price = Column("Price", TEXT)
 	Name = Column("Name", TEXT)
 	Manufacturer = Column("Manufacturer", TEXT)
 
@@ -65,8 +65,8 @@ class GPU(UniversalComponents):
 
 	__table_args__ = (
 		Column("Cores", TEXT),
-		Column("Memory", TEXT),
 		Column("Core Clock", TEXT),
+		Column("Memory", TEXT),
 		Column("Interface", TEXT),
 		Column("Dimensions", TEXT),
 		Column("TDP", TEXT)
@@ -128,9 +128,9 @@ class Case(UniversalComponents):
 	__tablename__ = "case"
 
 	__table_args__ = (
-		Column("Color", TEXT),
+		Column("Case type", TEXT),
 		Column("Dimensions", TEXT),
-		Column("Materials", TEXT),
+		Column("Color", TEXT),
 		Column("Compatibility", TEXT)
 
 	)

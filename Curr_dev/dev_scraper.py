@@ -62,49 +62,6 @@ def trim_list(item_list):
 				item_list[i] = item.strip().capitalize()
 	return item_list
 
-
-def check_record_exists(session, main_parts, name):
-	# Check if item exists in database
-	for single_part in main_parts:
-		if single_part == "cpu":
-			query = session.query(database.cpu).filter(database.cpu.c.Name == name).first()
-			if query:
-				return True
-		
-		elif single_part == "gpu":
-			query = session.query(database.gpu).filter(database.gpu.c.Name == name).first()
-			if query:
-				return True
-			
-		elif single_part == "cooler":
-			query = session.query(database.cooler).filter(database.cooler.c.Name == name).first()
-			if query:
-				return True
-			
-		elif single_part == "motherboard":
-			query = session.query(database.motherboard).filter(database.motherboard.c.Name == name).first()
-			if query:
-				return True
-			
-		elif single_part == "memory":
-			query = session.query(database.memory).filter(database.memory.c.Name == name).first()
-			if query:
-				return True
-			
-		elif single_part == "storage":
-			query = session.query(database.storage).filter(database.storage.c.Name == name).first()
-			if query:
-				return True
-			
-		elif single_part == "psu":
-			query = session.query(database.psu).filter(database.psu.c.Name == name).first()
-			if query:
-				return True
-			
-		elif single_part == "case":
-			query = session.query(database.case).filter(database.case.c.Name == name).first()
-			if query:
-				return True
 			
 def get_subpages(base_URL, component_URL, driver):
 	index_pages_dict = {}
@@ -544,7 +501,7 @@ def data_scraper(base_URL, all_product_links):
 			"gpu_list": [cores, clock, memory, interface, dimensions, tdp],
 			"cpu_list": [core_count, thread_count, base_clock, l3_cache, socket, cpu_cooler, tdp, igpu],
 			"psu_list": [atx12v, efficiency, modular, dimensions],
-			"psu_list": [compatibility, cooling_potential, fan_rpm, noise_level, dimensions],
+			"cooler_list": [compatibility, cooling_potential, fan_rpm, noise_level, dimensions],
 		}
 		
 		# Choose the correct dictionary
@@ -562,9 +519,11 @@ def data_scraper(base_URL, all_product_links):
 			item_list = part_lists_dict["cpu_list"]
 		elif part_type == "psu":
 			item_list = part_lists_dict["psu_list"]
+		elif part_type == "cooler":
+			item_list = part_lists_dict["cooler_list"]
 
 		item_list = trim_list(item_list)
-		pprint(item_list)
+		#pprint(item_list)
 
 		# Final trimming
 		if part_type == "gpu" and item_list[5] and item_list[5] != None:
@@ -585,12 +544,16 @@ def data_scraper(base_URL, all_product_links):
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
 				"Capacity": item_list[0],
-				"Form factor": item_list[1],
+				"Form Factor": item_list[1],
 				"Interface": item_list[2],
 				"Cache": item_list[3],
 				"Flash": item_list[4],
 				"TBW": item_list[5],
 			}
+			pprint(storage_dict)
+			i = insert(Storage).values(storage_dict)
+			session.execute(i)
+			session.commit()
 
 		elif part_type == "mobo":
 			mobo_dict = {
@@ -599,9 +562,13 @@ def data_scraper(base_URL, all_product_links):
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
 				"Chipset": item_list[0],
-				"Form factor": item_list[1],
-				"Memory compatibility": item_list[2],
+				"Form Factor": item_list[1],
+				"Memory Compatibility": item_list[2],
 			}
+			pprint(mobo_dict)
+			i = insert(Motherboard).values(mobo_dict)
+			session.execute(i)
+			session.commit()
 
 		elif part_type == "case":
 			case_dict = {
@@ -615,6 +582,10 @@ def data_scraper(base_URL, all_product_links):
 				"Compatibility": item_list[3],
 
 			}
+			pprint(case_dict)
+			i = insert(Case).values(case_dict)
+			session.execute(i)
+			session.commit()
 
 		elif part_type == "ram":
 			ram_dict = {
@@ -627,6 +598,10 @@ def data_scraper(base_URL, all_product_links):
 				"Speed": item_list[2],
 				"Latency": item_list[3],
 			}
+			pprint(ram_dict)
+			i = insert(Memory).values(ram_dict)
+			session.execute(i)
+			session.commit()
 
 		elif part_type == "gpu":
 			gpu_dict = {
@@ -638,9 +613,13 @@ def data_scraper(base_URL, all_product_links):
 				"Core Clock": item_list[1],
 				"Memory": item_list[2],
 				"Interface": item_list[3],
-				"Size": item_list[4],
+				"Dimensions": item_list[4],
 				"TDP": item_list[5],
 			}
+			pprint(gpu_dict)
+			i = insert(GPU).values(gpu_dict)
+			session.execute(i)
+			session.commit()
 
 		elif part_type == "cpu":
 			cpu_dict = {
@@ -657,29 +636,45 @@ def data_scraper(base_URL, all_product_links):
 				"TDP": item_list[6],
 				"Integrated GPU": item_list[7],
 			}
+			pprint(cpu_dict)
+			i = insert(CPU).values(cpu_dict)
+			session.execute(i)
+			session.commit()
 			
 		elif part_type == "psu":
-			cpu_dict = {
+			psu_dict = {
 				"URL": curr_link,
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
-				"Core Count": item_list[0],
-				"Thread Count": item_list[1],
-				"Base Clock": item_list[2],
-				"L3 Cache": item_list[3],
-				"Socket": item_list[4],
-				"Cpu Cooler": item_list[5],
-				"TDP": item_list[6],
-				"Integrated GPU": item_list[7],
+				"Is ATX12V": item_list[0],
+				"Efficiency": item_list[1],
+				"Modular": item_list[2],
+				"Dimensions": item_list[3],
 			}
+			pprint(psu_dict)
+			i = insert(PSU).values(psu_dict)
+			session.execute(i)
+			session.commit()
+		
+		elif part_type == "cooler":
+			cooler_dict = {
+				"URL": curr_link,
+				"Price": m_price,
+				"Name": trimmed_name,
+				"Manufacturer": m_manufacturer,
+				"Compatibility": item_list[0],
+				"Cooling Potential": item_list[1],
+				"Fan RPM": item_list[2],
+				"Noise Level": item_list[3],
+				"Dimensions": item_list[4],
+			}
+			pprint(cooler_dict)
+			i = insert(Cooler).values(cooler_dict)
+			session.execute(i)
+			session.commit()
 
 
-
-		## Do the insertion of data to the database		
-
-		#pprint(gpu_dict)
-		#print("\n")
 
 
 main()
