@@ -17,7 +17,7 @@ def main():
 	# Urls for jimms
 	base_URL = "https://www.jimms.fi"
 	product_URL = "/fi/Product/Show/"
-	component_URL = ["/fi/Product/List/000-00H/komponentit--emolevyt"]
+	component_URL = ["/fi/Product/List/000-00J/komponentit--kotelot"]
 	component_URL2 = ["https://www.jimms.fi/fi/Product/Show/187728/tuf-rtx4070ti-o12g-gaming/asus-geforce-rtx-4070-ti-tuf-gaming-oc-edition-naytonohjain-12gb-gddr6x-asus-cashback-70"]
 	component_temp = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet"]
 
@@ -239,35 +239,43 @@ def data_scraper(base_URL, all_product_links):
 			desc_list = []
 			trimmed_data = desc_data.find_next_siblings(string = True)
 			
-			# If there is no data, try another method for getting it
-			if len(trimmed_data) <= 2:
-				desc_data_p = desc_data.find_parent()
-				trimmed_data_p = desc_data_p.find_next_siblings()
+			# If there is no data or bad data, try another method for getting it
+			if len(trimmed_data) <= 2 or any(line.startswith(":") and len(line) > 1 for line in trimmed_data):
+				trimmed_data_p = results_item.contents
+				print("trimmed_data_p")
 
 				for sibling in trimmed_data_p:
+					#print(sibling)
 					if sibling is not None:
 						sibling_trim = sibling.get_text("\n")
-						sibling_trim2 = sibling_trim.splitlines()
-						for i in range(1, len(sibling_trim2)):
-							if ":" in sibling_trim2[i]:
-								new_item = sibling_trim2[i-1] + sibling_trim2[i]
-								desc_list.append(new_item)
-	
-			for item in trimmed_data:
-				for desc in item.stripped_strings:
-					desc_list.append(desc)
-					
-			sleep(0.1)
-
-			#pprint(name_list)
-			#pprint(desc_list)
-
+						tt_trim = sibling_trim.lstrip("Tekniset tiedot").strip("\xa0-").strip()
+						newline_trim = tt_trim.splitlines()
+						for i in range(1, len(newline_trim)):
+							if ":" in newline_trim[i]:
+								new_item = newline_trim[i-1] + newline_trim[i]
+								new_item_trim = new_item.rstrip("\xa0-").lstrip("\xa0-").strip()
+								desc_list.append(new_item_trim)
+			else:
+				print("trimmed_data")
+				for item in trimmed_data:
+					for desc in item.stripped_strings:
+						desc_list.append(desc)
+						
 
 
+		sleep(0.1)
+
+		#pprint(name_list)
+		pprint(desc_list)
+
+
+		# Use special searches in case of bad HTML formatting
 		chipset_list = strong_search(results_item, "Piirisarja")
 		mobo_ff_list = strong_search(results_item, "Emolevyn tyyppi")
 		mobo_memory_list = strong_search(results_item, "Muisti")
+		#case_dimensions_list = strong_search(results_item, "Mitat")
 
+		# Initialize upcoming variables
 		capacity = None
 		form_factor = None
 		interface = None
@@ -299,154 +307,87 @@ def data_scraper(base_URL, all_product_links):
 		cooling = None
 		slots = None
 		weight = None
+		case_type = None
+		dimensions = None
+		color = None
+		compatibility = None
+
 
 		for desc in desc_list:
 
-			## Into these if statements, do as i've done in the gpu part already
 			if "/fi/Product/List/000-00K" in get_category:
 				part_type = "storage"
 
 				if "SSD-LEVY" in trimmed_name.upper():
 					trimmed_name = trimmed_name.upper().strip("SSD-LEVY").strip().capitalize()
 
-				if capacity is None:
-					if any(s in desc.upper() for s in ["KAPASITEETTI", "MUISTIN KOKO"]) and ":" in desc.upper():
+				if any(s in desc.upper() for s in ["KAPASITEETTI", "MUISTIN KOKO"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if capacity is None:
 						capacity = desc
 
-				elif form_factor is None:
-					if any(s in desc.upper() for s in ["FORM FACTOR:", "M.2 TYYPPI"]) and ":" in desc.upper():
+				elif any(s in desc.upper() for s in ["FORM FACTOR:", "M.2 TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if form_factor is None:
 						form_factor = desc
 
-				elif interface is None:
-					if any(s in desc.upper() for s in ["VÄYLÄ", "LIITÄNTÄ", "LIITÄNNÄT"]) and ":" in desc.upper():
+				elif any(s in desc.upper() for s in ["VÄYLÄ", "LIITÄNTÄ", "LIITÄNNÄT"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if interface is None:
 						interface = desc
 
-				elif cache is None:	
-					if any(s in desc.upper() for s in ["CACHE", "DRAM"]) and ":" in desc.upper():
+				elif any(s in desc.upper() for s in ["CACHE", "DRAM"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if cache is None:	
 						cache = desc
 
-				elif flash is None:
-					if any(s in desc.upper() for s in ["MUISTITYYPPI", "TALLENNUSMUISTI", "FLASH"]) and ":" in desc.upper():
+				elif any(s in desc.upper() for s in ["MUISTITYYPPI", "TALLENNUSMUISTI", "FLASH"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if flash is None:
 						flash = desc
 
-				elif tbw is None:
-					if any(s in desc.upper() for s in ["TBW", "KÄYTTÖKESTÄVYYS"]) and ":" in desc.upper():
+				elif any(s in desc.upper() for s in ["TBW", "KÄYTTÖKESTÄVYYS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if tbw is None:
 						tbw = desc
 
 
 			elif "/fi/Product/List/000-00H" in get_category:
 				part_type = "mobo"
 
-				if chipset is None:
-					if any(s in desc.upper() for s in ["PIIRISARJA"]) and ":" in desc.upper():
-						chipset = desc
-					elif chipset_list is not None:
+				if any(s in desc.upper() for s in ["PIIRISARJA"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if chipset_list is not None:
 						chipset = chipset_list
+					elif chipset is None:
+						chipset = desc
 
-				elif form_factor is None:
-					if any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper():
-						form_factor = desc
-					elif mobo_ff_list is not None:
+				if any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if mobo_ff_list is not None:
 						form_factor = mobo_ff_list
+					elif form_factor is None:
+						form_factor = desc
 
 
-				elif memory_compatibility is None:
-					if any(s in desc.upper() for s in ["DIMM"]) and ":" in desc.upper():
-						memory_compatibility = desc
-					elif mobo_memory_list is not None:
+				if any(s in desc.upper() for s in ["DIMM"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if mobo_memory_list is not None:
 						memory_compatibility = mobo_memory_list
+					elif memory_compatibility is None:
+						memory_compatibility = desc
 
 
 			elif "/fi/Product/List/000-00J" in get_category:
 				part_type = "case"
+				
+				if any(s in desc.upper() for s in ["KOTELOTYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if case_type is None:
+						case_type = desc
 
-				if "KOTELOT" in trimmed_name.upper():
-					trimmed_name = trimmed_name.upper().strip("KOTELOT").strip().capitalize()
+				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["MITAT"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if dimensions is None:
+						dimensions = desc
+						
+				elif any(s in desc.upper() for s in ["VÄRI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if color is None:
+						color = desc
 
-				if "MALLI" in desc.upper():
-					model = desc
+				elif any(s in desc.upper() for s in ["YHTEENSOPIVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if compatibility is None:
+						compatibility = desc
 
-				elif "KOTELOTYYPPI" in desc.upper():
-					case_type = desc
-
-				elif "MITAT" in desc.upper():
-					dimensions = desc
-
-				elif "VÄRI" in desc.upper() or "ULKOINEN VÄRI" in desc.upper():
-					color = desc
-
-				elif "MATERIAALIT" in desc.upper():
-					materials = desc
-
-				elif "TUULETINTUKI" in desc.upper() or "TUULETINTUKI EDESSÄ" in desc.upper() or "TUULETINTUKI KATOSSA" in desc.upper() or "TUULETINTUKI TAKANA" in desc.upper():
-					fan_support = desc
-
-				elif "JÄÄHDYTINTUKI" in desc.upper() or "JÄÄHDYTYS" in desc.upper() or "EDESSÄ" in desc.upper() or "KATOSSA" in desc.upper():
-					cooling = desc
-
-				elif "LAAJENNUSPAIKAT" in desc.upper() or "ETUPANEELIN" in desc.upper() or "LAITEPAIKAT" in desc.upper():
-					slots = desc
-
-				elif "PAINO" in desc.upper():  
-					weight = desc
-
-				elif "TILAVUUS" in desc.upper():
-					volume = desc
-
-				elif "YHTEENSOPIVUUS" in desc.upper():
-					compatibility = desc
-
-				elif "MAKSIMIMITAT" in desc.upper() or "MAKSIMIMITAT CPU-COOLERIN" in desc.upper() or "MAKSIMIMITAT VIRTALÄHTEEN PITUUS" in desc.upper() or "MAKSIMIMITAT NÄYTÖNOHJAIMEN PITUUS" in desc.upper() or "MAKSIMIMITAT NÄYTÖNOHJAIMEN LEVEYS" in desc.upper() or "MAKSIMIMITAT NÄYTÖNOHJAIMEN KORKEUS" in desc.upper():
-					maximum_dimensions = desc	
-
-				elif "PÖLYSUOTIMET" in desc.upper():
-					dust_filters = desc
-
-				elif "VIRTALÄHDETUKI" in desc.upper():
-					power_supply_support = desc
-
-				elif "PUMPPU" in desc.upper():
-					pump = desc
-
-				elif "TUULETINPAIKAT" in desc.upper() or "TUULETINPAIKAT EDESSÄ" in desc.upper() or "TUULETINPAIKAT KATOSSA" in desc.upper() or "TUULETINPAIKAT TAKANA" in desc.upper():
-					fan_positions = desc
-
-
-			elif "/fi/Product/List/000-00M" in get_category:
-				part_type = "addin"
-
-				if "LISÄKORTIT" in trimmed_name.upper():
-					trimmed_name = trimmed_name.upper().strip("LISÄKORTIT").strip().capitalize()
-
-				if "SISÄÄNTULO" in desc.upper() or "VÄYLÄ" in desc.upper() or "KAISTOJEN" in desc.upper() or "TIEDONSIIRTONOPEUS" in desc.upper() or "YHTEENSOPIVUUS" in desc.upper():
-					ingress = desc
-
-				if "OMINAISUUDET" in desc.upper():
-					characteristics = desc
-
-				elif "KÄYTTÖTAAJUUS" in desc.upper():
-					frequency = desc
-
-				elif "PAINO" in desc.upper():
-					weight = desc
-
-				elif "VERKKOSTANDARDIT" in desc.upper():
-					network_standards = desc
-
-				elif "BLUETOOTH" in desc.upper():
-					bluetooth = desc
-
-				elif "MALLI" in desc.upper():
-					model = desc
-
-				elif "FORM FACTOR" in desc.upper():
-					form_factor = desc
-
-				elif "ULOSLÄHTÖ" in desc.upper() or "VÄYLÄT" in desc.upper() or "TIEDONSIIRTONOPEUS" in desc.upper() or "PORTTIEN" in desc.upper() or "LIITÄNNÄT" in desc.upper():
-					output = desc
-
-				elif "MUUTA" in desc.upper() or "PIIRISARJA" in desc.upper():
-					change = desc
 
 			elif "/fi/Product/List/000-00N" in get_category:
 				part_type = "ram"
@@ -532,7 +473,7 @@ def data_scraper(base_URL, all_product_links):
 			"mobo_list": [chipset, form_factor, memory_compatibility],
 			"gpu_list": [cores, clock, memory, interface, size, tdp],
 			"cpu_list": [core_count, thread_count, base_clock, l3_cache, socket, cpu_cooler, tdp, igpu],
-			"case": [model, case_type, dimensions, color, materials, fan_support, cooling, slots, weight],
+			"case_list": [case_type, dimensions, color, compatibility],
 		}
 
 		if part_type == "storage":
@@ -555,7 +496,7 @@ def data_scraper(base_URL, all_product_links):
 				item_list[5] = item_list[5].upper().strip("VÄHINTÄÄN")
 
 		if part_type == "mobo" and item_list[2] and item_list[2] != None:
-			item_list[2] = item_list.strip(",")
+			item_list[2] = item_list[2].strip(",")
 
 		## Create dictionaries for all parts, like this
 		if part_type == "storage":
@@ -639,41 +580,14 @@ def data_scraper(base_URL, all_product_links):
 				"Price": m_price,
 				"Name": trimmed_name,
 				"Manufacturer": m_manufacturer,
-				"Model": item_list[0],
-				"Case type": item_list[1],
-				"Dimensions": item_list[2],
-				"Color": item_list[3],
-				"Materials": item_list[4],
-				"Fan support": item_list[5],
-				"Cooling": item_list[6],
-				"Slots": item_list[7],
-				"Weight": item_list[8],
-				"Volume": item_list[9],
-				"Compatibility": item_list[10],
-				"Maximum dimensions": item_list[11],
-				"Dust filters": item_list[12],
-				"Power supply support": item_list[13],
-				"Fan positions": item_list[14],
-				"Pump": item_list[15],
+				"Case type": item_list[0],
+				"Dimensions": item_list[1],
+				"Color": item_list[2],
+				"Compatibility": item_list[3],
+
 			}
 
-		elif part_type == "addin":
-			addin_dict = {
-				"URL": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Ingress": item_list[0],
-				"Characteristics": item_list[1],
-				"Frequency": item_list[2],					
-				"Weight": item_list[3],
-				"Network standards": item_list[4],
-				"bluetooth": item_list[5],
-				"Model": item_list[6],
-				"Form factor": item_list[7],
-				"Output": item_list[8],
-				"Change": item_list[9],
-			}
+
 
 		## Do the insertion of data to the database		
 
