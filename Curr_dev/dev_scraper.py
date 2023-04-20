@@ -34,6 +34,8 @@ def main():
 	all_product_links = get_urls(base_URL, index_pages_dict)
 	data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case)
 	session.close()
+	print("\n\n")
+	print("Scraping completed")
 
 def database_connection():
 	# Location of current directory
@@ -75,19 +77,21 @@ def get_meta(item_soup, metasearch):
 
 def strong_search(results_item, strong_desc):
 	# Get strong item with string from description
-	strong_location = results_item.select_one(f"strong:-soup-contains('{strong_desc}')")
-	strong_list = []
+	try:
+		strong_location = results_item.select_one(f"strong:-soup-contains('{strong_desc}')")
+		strong_list = []
 
-	if strong_location is not None:
-		strong_data = strong_location.find_next_siblings(string = True)
-		for item in strong_data:
-			if item != ":" and item is not None and item not in strong_list:
-				strong_list.append(item)
-		strong_list = strong_list[0]
+		if strong_location is not None:
+			strong_data = strong_location.find_next_siblings(string = True)
+			for item in strong_data:
+				if item != ":" and item is not None and item not in strong_list:
+					strong_list.append(item)
+			strong_list = strong_list[0]
+		else:
+			strong_list = None
 
-	else:
+	except:
 		strong_list = None
-
 
 	return strong_list
 
@@ -342,20 +346,20 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 			elif "/fi/Product/List/000-00H" in get_category:
 				part_type = "mobo"
 
-				if any(s in desc.upper() for s in ["PIIRISARJA"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				if any(s in desc.upper() for s in ["PIIRISARJA"]) and ":" in desc.upper() and not desc.strip().endswith(":") or chipset_list is not None:
 					if chipset_list is not None:
 						chipset = chipset_list
 					elif chipset is None:
 						chipset = desc
 
-				elif any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") or mobo_ff_list is not None:
 					if mobo_ff_list is not None:
 						form_factor = mobo_ff_list
 					elif form_factor is None:
 						form_factor = desc
 
 
-				elif any(s in desc.upper() for s in ["DIMM"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["DIMM"]) and ":" in desc.upper() and not desc.strip().endswith(":") or mobo_memory_list is not None:
 					if mobo_memory_list is not None:
 						memory_compatibility = mobo_memory_list
 					elif memory_compatibility is None:
@@ -711,6 +715,6 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 			session.execute(i)
 			session.commit()
 
-	sleep(0.1)
+		sleep(0.1)
 
 main()
