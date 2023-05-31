@@ -4,6 +4,8 @@
 
 import database
 import requests
+import time
+#import threads
 from pathlib import Path
 from bs4 import BeautifulSoup
 from time import sleep as sleep
@@ -24,6 +26,18 @@ def main():
 	product_URL = "/fi/Product/Show/"
 	component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 	
+	# Do a speedtest to jimms
+	speed_passed = speedtest(base_URL)
+	
+	if not speed_passed:
+		speed_input = input(f"Speedtest either failed or was low, do you still want to continue? (Y/yes) \n")
+
+		if speed_input.upper() in ["Y", "YES"]:
+			print("Continuing...")
+		else:
+			print("Stopping...")
+			return
+	
 	# Create selenium instance
 	driver_path = "./chromedriver_win32/chromedriver.exe"
 	driver = webdriver.Chrome(executable_path = driver_path)
@@ -36,6 +50,40 @@ def main():
 	session.close()
 	print("\n\n")
 	print("Scraping completed")
+	
+def check_download_speed(url):
+	try:
+		start_time = time.time()
+		response = requests.get(url)
+		response.raise_for_status()
+		end_time = time.time()
+		download_time = end_time - start_time
+		download_speed = len(response.content) / download_time / 1024
+		return download_speed
+
+	except (requests.exceptions.RequestException, requests.exceptions.HTTPError):
+		return None
+
+def speedtest(base_URL):
+	speed_list = []
+
+	while len(speed_list) < 5:
+		speed = check_download_speed(base_URL)
+		speed_list.append(speed)
+
+	avg_speed = sum(speed_list) / len(speed_list) if None not in speed_list else None
+
+	if avg_speed is not None and avg_speed > 500:
+		print(f"Download speed to '{base_URL}' is good ({avg_speed:.2f} kb/s)")
+		speed_passed = True
+	elif avg_speed is not None and avg_speed < 500:
+		print(f"WARNING: Download speed to '{base_URL}' is low ({avg_speed:.2f} kb/s)")
+		speed_passed = False
+	else:
+		print(f"ERROR: Failed to check download speed to '{base_URL}'")
+		speed_passed = False
+
+	return speed_passed
 
 def database_connection():
 	# Location of current directory
