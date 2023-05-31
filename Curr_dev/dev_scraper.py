@@ -52,6 +52,7 @@ def main():
 	print("Scraping completed")
 	
 def check_download_speed(url):
+	# Get the values for the download speed
 	try:
 		start_time = time.time()
 		response = requests.get(url)
@@ -66,17 +67,21 @@ def check_download_speed(url):
 
 def speedtest(base_URL):
 	speed_list = []
+	
+	# Minimum acceptable download speed
+	min_speed = 500
 
+	# Check the average of 5 speedtests against minimum speed
 	while len(speed_list) < 5:
 		speed = check_download_speed(base_URL)
 		speed_list.append(speed)
 
 	avg_speed = sum(speed_list) / len(speed_list) if None not in speed_list else None
 
-	if avg_speed is not None and avg_speed > 500:
+	if avg_speed is not None and avg_speed > min_speed:
 		print(f"Download speed to '{base_URL}' is good ({avg_speed:.2f} kb/s)")
 		speed_passed = True
-	elif avg_speed is not None and avg_speed < 500:
+	elif avg_speed is not None and avg_speed < min_speed:
 		print(f"WARNING: Download speed to '{base_URL}' is low ({avg_speed:.2f} kb/s)")
 		speed_passed = False
 	else:
