@@ -24,7 +24,9 @@ def main():
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"
-	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	component_url = ["/fi/Product/List/000-00H/komponentit--emolevyt"]
+	
+	component_url2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 	
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
@@ -288,14 +290,11 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 		# Get all of the description data and trim it
 		print("Current page:", curr_link)
 		desc_data = results_item.select_one("strong:-soup-contains('Tekniset tiedot')")
+		#desc_data = results_item.select_one(":contains('Tekniset tiedot')")
 		if desc_data is not None:
 			desc_list = []
 
 			trimmed_data_p = results_item.contents
-			
-			# Remove everything before Tekniset tiedot
-			#index = trimmed_data_p.index("Tekniset tiedot")
-			#indexed_data = trimmed_data_p[index:]
 			print("trimmed_data_p")
 
 			for sibling in trimmed_data_p:
@@ -315,38 +314,50 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 						if ":" not in ul_title:
 							ul_title = ul_title + ":"
-						print(ul_title)
 							
 							
 						sibling_trim = sibling.get_text().strip("\xa0-").strip().splitlines()
-						ul_sibling = "; ".join(sibling_trim)
-						
-						ul_item = f"{ul_title} {ul_sibling}"
-						desc_list.append(ul_item)
-						print(ul_title)
+
+						if not any(":" in skip for skip in sibling_trim):
+							sibling_trim = "; ".join(sibling_trim)
+
+						if isinstance(sibling_trim, list):
+							for list_item in sibling_trim:
+								desc_list.append(list_item)
+						else:
+							ul_item = f"{ul_title} {sibling_trim}"
+							desc_list.append(ul_item)
 						
 						# Delete unnecessary list items
 						try:
 							index = desc_list.index(ul_title)
 							del desc_list[index]
 						except ValueError:
-							ul_title = ul_title.rstrip(":").rstrip()
-							index = desc_list.index(ul_title)
-							del desc_list[index]
-						except:
-							print("Something went wrong with indexing")
+							try:
+								ul_title = ul_title.rstrip(":").rstrip()
+								index = desc_list.index(ul_title)
+								del desc_list[index]
+							except:
+								print("Something went wrong")
+
 							
 					else:
 						# If the item is not a ul item
 						sibling_trim = sibling.get_text("\n")
-						tt_trim = sibling_trim.lstrip("Tekniset tiedot").strip("\xa0-").strip()
+						tt_trim = sibling_trim.strip("\xa0-").strip()
 						newline_trim = tt_trim.splitlines()
 						if len(newline_trim) > 0 and newline_trim != "":
 							for final_item in newline_trim:
 									desc_list.append(final_item)
 									
 				desc_list = [x for x in desc_list if x != "" and x != ":"]
-				print(desc_list)
+				# Remove everything before Tekniset tiedot
+				if "Tekniset tiedot:" in desc_list:
+					index = desc_list.index("Tekniset tiedot:")
+					desc_list = desc_list[index:]
+				elif "Tekniset tiedot" in desc_list:
+					index = desc_list.index("Tekniset tiedot")
+					desc_list = desc_list[index:]
 				
 				# Format items better
 				try:
@@ -429,7 +440,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if capacity is None:
 						capacity = desc
 
-				elif any(s in desc.upper() for s in ["FORM FACTOR:", "M.2 TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["FORM FACTOR:", "M.2 TYYPPI", "MUOTO"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if form_factor is None:
 						form_factor = desc
 
@@ -437,15 +448,18 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if interface is None:
 						interface = desc
 
-				elif any(s in desc.upper() for s in ["CACHE", "DRAM"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
-					if cache is None:	
-						cache = desc
+				elif any(s in desc.upper() for s in ["CACHE", "DRAM", "PUSKURI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if cache is None:
+						if any(s in desc.upper() for s in ["CACHELESS", "DRAMLESS"]):
+							cache = None
+						else:
+							cache = desc
 
 				elif any(s in desc.upper() for s in ["MUISTITYYPPI", "TALLENNUSMUISTI", "FLASH"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if flash is None:
 						flash = desc
 
-				elif any(s in desc.upper() for s in ["TBW", "KÄYTTÖKESTÄVYYS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["TBW", "KÄYTTÖKESTÄVYYS", "TOTAL BYTES WRITTEN"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if tbw is None:
 						tbw = desc
 
