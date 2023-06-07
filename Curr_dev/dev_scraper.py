@@ -22,12 +22,14 @@ from sqlalchemy import create_engine
 
 def main():
 	# Urls for jimms
-	base_URL = "https://www.jimms.fi"
-	product_URL = "/fi/Product/Show/"
-	component_URL = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	base_url = "https://www.jimms.fi"
+	product_url = "/fi/Product/Show/"
+	component_url = ["/fi/Product/List/000-00H/komponentit--emolevyt"]
+
+	component_url2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 	
 	# Do a speedtest to jimms
-	speed_passed = speedtest(base_URL)
+	speed_passed = speedtest(base_url)
 	
 	if not speed_passed:
 		speed_input = input(f"Speedtest either failed or was low, do you still want to continue? (Y/yes) \n")
@@ -44,9 +46,9 @@ def main():
 
 	engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case = database_connection()
 
-	index_pages_dict = get_subpages(base_URL, component_URL, driver)
-	all_product_links = get_urls(base_URL, index_pages_dict)
-	data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case)
+	index_pages_dict = get_subpages(base_url, component_url, driver)
+	all_product_links = get_urls(base_url, index_pages_dict)
+	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case)
 	session.close()
 	print("\n\n")
 	print("Scraping completed")
@@ -65,7 +67,7 @@ def check_download_speed(url):
 	except (requests.exceptions.RequestException, requests.exceptions.HTTPError):
 		return None
 
-def speedtest(base_URL):
+def speedtest(base_url):
 	speed_list = []
 	
 	# Minimum acceptable download speed
@@ -73,19 +75,19 @@ def speedtest(base_URL):
 
 	# Check the average of 5 speedtests against minimum speed
 	while len(speed_list) < 5:
-		speed = check_download_speed(base_URL)
+		speed = check_download_speed(base_url)
 		speed_list.append(speed)
 
 	avg_speed = sum(speed_list) / len(speed_list) if None not in speed_list else None
 
 	if avg_speed is not None and avg_speed > min_speed:
-		print(f"Download speed to '{base_URL}' is good ({avg_speed:.2f} kb/s)")
+		print(f"Download speed to '{base_url}' is good ({avg_speed:.2f} kb/s)")
 		speed_passed = True
 	elif avg_speed is not None and avg_speed < min_speed:
-		print(f"WARNING: Download speed to '{base_URL}' is low ({avg_speed:.2f} kb/s)")
+		print(f"WARNING: Download speed to '{base_url}' is low ({avg_speed:.2f} kb/s)")
 		speed_passed = False
 	else:
-		print(f"ERROR: Failed to check download speed to '{base_URL}'")
+		print(f"ERROR: Failed to check download speed to '{base_url}'")
 		speed_passed = False
 
 	return speed_passed
@@ -160,12 +162,12 @@ def trim_list(item_list):
 	return item_list
 
 
-def get_subpages(base_URL, component_URL, driver):
+def get_subpages(base_url, component_url, driver):
 	index_pages_dict = {}
 
 	# Get subpages for all components
 	try: 
-		for item in component_URL:
+		for item in component_url:
 			parameter = "?p="
 
 			page_index = [1]
@@ -173,13 +175,13 @@ def get_subpages(base_URL, component_URL, driver):
 			print("Getting all pages for", item)
 
 			# Go to page using Selenium
-			driver.get(base_URL + item + "?p=1")
+			driver.get(base_url + item + "?p=1")
 			wait = WebDriverWait(driver, 10)
 			button = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[@data-bind='click: moveToLastPage']")))
 			driver.execute_script("arguments[0].click();", button)
 			sleep(2)
 
-			# Get the URL
+			# Get the url
 			last_page_url = driver.current_url
 			last_page_number = int(last_page_url.split("=")[-1])
 			page_index.append(last_page_number)
@@ -209,13 +211,13 @@ def get_subpages(base_URL, component_URL, driver):
 
 	return index_pages_dict
 
-def get_urls(base_URL, index_pages_dict):
+def get_urls(base_url, index_pages_dict):
 	all_product_links = []
 
 	# Get links for all the products
 	for key, value in index_pages_dict.items():
 		for index in value:
-			curr_url = base_URL + key + index
+			curr_url = base_url + key + index
 			print(curr_url)
 
 			# Parse and iterate through the html using bs4
@@ -245,10 +247,10 @@ def get_urls(base_URL, index_pages_dict):
 
 	return all_product_links
 
-def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case):
+def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case):
 
 	for product in all_product_links:
-		curr_link = base_URL + product
+		curr_link = base_url + product
 		item_page = requests.get(curr_link, allow_redirects=True)
 		item_soup = BeautifulSoup(item_page.content, "html.parser")
 
@@ -262,6 +264,10 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 		m_price = get_meta(item_soup, {"property": "product:price:amount"})
 		m_desc = get_meta(item_soup, {"property": "og:description"})
 
+		# Get the short description 
+		short_desc = item_soup.find(class_="jim-product-cta-box-shortdescription")
+		if short_desc:
+			short_desc = short_desc.get_text().strip("\xa0-").strip().split(", ")
 
 		# Get the name
 		name_location = item_soup.find("h1")
@@ -286,29 +292,79 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 		desc_data = results_item.select_one("strong:-soup-contains('Tekniset tiedot')")
 		if desc_data is not None:
 			desc_list = []
-			trimmed_data = desc_data.find_next_siblings(string = True)
 
-			# If there is no data or bad data, try another method for getting it
-			if len(trimmed_data) <= 2 or any(line.startswith(":") and len(line) > 1 for line in trimmed_data):
-				trimmed_data_p = results_item.contents
-				print("trimmed_data_p")
+			trimmed_data_p = results_item.contents
+			
+			# Remove everything before Tekniset tiedot
+			#index = trimmed_data_p.index("Tekniset tiedot")
+			#indexed_data = trimmed_data_p[index:]
+			print("trimmed_data_p")
 
-				for sibling in trimmed_data_p:
-					#print(sibling)
-					if sibling is not None:
+			for sibling in trimmed_data_p:
+				if sibling is not None and sibling != "":
+					
+					# In case there is a ul item, get it separately
+					if sibling.name == "ul":
+						
+						ul_title = sibling.find_previous_sibling()
+						ul_title = ul_title.get_text("\n").strip("\xa0-").strip().splitlines()
+						while True:
+							if ul_title[-1] == ":" or ul_title[-1] == "":
+								del ul_title[-1]
+							else:
+								ul_title = ul_title[-1]
+								break
+
+						if ":" not in ul_title:
+							ul_title = ul_title + ":"
+						print(ul_title)
+							
+							
+						sibling_trim = sibling.get_text().strip("\xa0-").strip().splitlines()
+						ul_sibling = "; ".join(sibling_trim)
+						
+						ul_item = f"{ul_title} {ul_sibling}"
+						desc_list.append(ul_item)
+						print(ul_title)
+						
+						# Delete unnecessary list items
+						try:
+							index = desc_list.index(ul_title)
+							del desc_list[index]
+						except ValueError:
+							ul_title = ul_title.rstrip(":").rstrip()
+							index = desc_list.index(ul_title)
+							del desc_list[index]
+						except:
+							print("Something went wrong with indexing")
+							
+					else:
+						# If the item is not a ul item
 						sibling_trim = sibling.get_text("\n")
 						tt_trim = sibling_trim.lstrip("Tekniset tiedot").strip("\xa0-").strip()
 						newline_trim = tt_trim.splitlines()
-						for i in range(1, len(newline_trim)):
-							if ":" in newline_trim[i]:
-								new_item = newline_trim[i-1] + newline_trim[i]
-								new_item_trim = new_item.rstrip("\xa0-").lstrip("\xa0-").strip()
-								desc_list.append(new_item_trim)
-			else:
-				print("trimmed_data")
-				for item in trimmed_data:
-					for desc in item.stripped_strings:
-						desc_list.append(desc)
+						if len(newline_trim) > 0 and newline_trim != "":
+							for final_item in newline_trim:
+									desc_list.append(final_item)
+									
+				desc_list = [x for x in desc_list if x != "" and x != ":"]
+				print(desc_list)
+				
+				# Format items better
+				try:
+					for i, item in enumerate(desc_list):
+						if item.startswith(":"):
+							desc_list[i] = desc_list[i-1] + desc_list[i]
+							del desc_list[i-1]
+						if item.endswith(":"):
+							desc_list[i] = desc_list[i] + desc_list[i+1]
+							del desc_list[i+1]
+				except IndexError as e:
+					print(f"Error: {e}")
+				except:
+					print("Undefined error")
+					
+
 
 
 		sleep(0.1)
@@ -405,6 +461,8 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 					elif chipset is None:
 						chipset = desc
 
+							
+
 				elif any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") or mobo_ff_list is not None:
 					if mobo_ff_list is not None:
 						form_factor = mobo_ff_list
@@ -417,6 +475,7 @@ def data_scraper(base_URL, all_product_links, engine, session, metadata, CPU, GP
 						memory_compatibility = mobo_memory_list
 					elif memory_compatibility is None:
 						memory_compatibility = desc
+
 
 
 			elif "/fi/Product/List/000-00J" in get_category:
