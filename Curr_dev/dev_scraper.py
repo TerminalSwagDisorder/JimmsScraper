@@ -610,7 +610,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if core_count is None:
 						core_count = desc
 
-				elif any(s in desc.upper() for s in ["THREADIEN MÄÄRÄ"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["THREADIEN MÄÄRÄ", "SÄIKEIDEN MÄÄRÄ"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if thread_count is None:
 						thread_count = desc
 
@@ -618,7 +618,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if base_clock is None:
 						base_clock = desc
 
-				elif any(s in desc.upper() for s in ["L3"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["VÄLIMUISTI", "L3"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if cpu_cache is None:
 						cpu_cache = desc
 
