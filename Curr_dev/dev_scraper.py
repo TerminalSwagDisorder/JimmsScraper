@@ -5,7 +5,7 @@
 import database
 import requests
 import time
-#import threads
+import threading
 from pathlib import Path
 from bs4 import BeautifulSoup
 from time import sleep as sleep
@@ -13,6 +13,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import StaleElementReferenceException
 from pprint import pprint as pprint
 from sqlalchemy import *
 from sqlalchemy.orm import sessionmaker
@@ -24,13 +25,13 @@ def main():
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"
-	component_url = ["/fi/Product/List/000-00H/komponentit--emolevyt"]
+	component_url = ["/fi/Product/List/000-00R/komponentit--prosessorit"]
 	
 	component_url2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
-	
+
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
-	
+
 	if not speed_passed:
 		speed_input = input(f"Speedtest either failed or was low, do you still want to continue? (Y/yes) \n")
 
@@ -39,20 +40,18 @@ def main():
 		else:
 			print("Stopping...")
 			return
-	
-	# Create selenium instance
-	driver_path = "./chromedriver_win32/chromedriver.exe"
-	driver = webdriver.Chrome(executable_path = driver_path)
 
 	engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case = database_connection()
 
-	index_pages_dict = get_subpages(base_url, component_url, driver)
+	index_pages_dict = get_subpages(base_url, component_url)
 	all_product_links = get_urls(base_url, index_pages_dict)
+
+	sleep(2)
 	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case)
 	session.close()
 	print("\n\n")
 	print("Scraping completed")
-	
+
 def check_download_speed(url):
 	# Get the values for the download speed
 	try:
@@ -69,7 +68,7 @@ def check_download_speed(url):
 
 def speedtest(base_url):
 	speed_list = []
-	
+
 	# Minimum acceptable download speed
 	min_speed = 500
 
@@ -81,13 +80,13 @@ def speedtest(base_url):
 	avg_speed = sum(speed_list) / len(speed_list) if None not in speed_list else None
 
 	if avg_speed is not None and avg_speed > min_speed:
-		print(f"Download speed to '{base_url}' is good ({avg_speed:.2f} kb/s)")
+		print(f"\nDownload speed to '{base_url}' is good ({avg_speed:.2f} kb/s)\n")
 		speed_passed = True
 	elif avg_speed is not None and avg_speed < min_speed:
-		print(f"WARNING: Download speed to '{base_url}' is low ({avg_speed:.2f} kb/s)")
+		print(f"\nWARNING: Download speed to '{base_url}' is low ({avg_speed:.2f} kb/s)\n")
 		speed_passed = False
 	else:
-		print(f"ERROR: Failed to check download speed to '{base_url}'")
+		print(f"\nERROR: Failed to check download speed to '{base_url}'\n")
 		speed_passed = False
 
 	return speed_passed
@@ -97,7 +96,7 @@ def database_connection():
 	fPath = Path(__file__).resolve()
 	dPath = fPath.parent
 	finPath = dPath.joinpath("database")
-	
+
 	# Create a connection to the database
 	engine = create_engine("sqlite:///" + str(finPath.joinpath("pcbuildwebsite_db.db")), echo=True, pool_pre_ping=True)
 	Session = sessionmaker(bind = engine)
@@ -154,98 +153,138 @@ def strong_search(results_item, strong_desc):
 def trim_list(item_list):
 	for i, item in enumerate(item_list):
 		if item and item != None:
+			
+			# Trim each item by removing the colon and everything it
 			data = item.split(":", 1)
 			if len(data) > 1:
 				item_list[i] = data[1].strip().capitalize()
 			else:
 				item_list[i] = item.strip().capitalize()
+			
+			# Translate kyllä and ei
+			if item_list[i].upper() == "KYLLÄ" and len(item_list[i]) < 7:
+				item_list[i] = "Yes"
+			elif item_list[i].upper() == "EI" and len(item_list[i]) < 4:
+				item_list[i] = "No"
 	return item_list
 
 
-def get_subpages(base_url, component_url, driver):
-	index_pages_dict = {}
-
+def process_subpages(base_url, index_pages_dict, item, lock):
+	# Create selenium instance
+	driver_path = "./chromedriver_win32/chromedriver.exe"
+	driver = webdriver.Chrome(executable_path = driver_path)
+	
 	# Get subpages for all components
 	try: 
-		for item in component_url:
-			parameter = "?p="
+		parameter = "?p="
+		page_index = [1]
 
-			page_index = [1]
+		print("Getting all pages for", item)
 
-			print("Getting all pages for", item)
+		# Go to page using Selenium
+		driver.get(base_url + item + "?p=1")
+		wait = WebDriverWait(driver, 10)
+		button = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[@data-bind='click: moveToLastPage']")))
+		driver.execute_script("arguments[0].click();", button)
+		sleep(2)
 
-			# Go to page using Selenium
-			driver.get(base_url + item + "?p=1")
-			wait = WebDriverWait(driver, 10)
-			button = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[@data-bind='click: moveToLastPage']")))
-			driver.execute_script("arguments[0].click();", button)
-			sleep(2)
+		# Get the url
+		last_page_url = driver.current_url
+		last_page_number = int(last_page_url.split("=")[-1])
+		page_index.append(last_page_number)
 
-			# Get the url
-			last_page_url = driver.current_url
-			last_page_number = int(last_page_url.split("=")[-1])
-			page_index.append(last_page_number)
+		# Add subpage numbers to page_index
+		page_nums = range(page_index[0] + 1, page_index[1])
+		for num in page_nums:
+			lock.acquire()
+			page_index.append(num)
+			lock.release()
+			page_index.sort()
 
-			# Add subpage numbers to page_index
-			page_nums = range(page_index[0] + 1, page_index[1])
-			for num in page_nums:
-				page_index.append(num)
-				page_index.sort()
+		# Create a new list with added parameter
+		pages_with_param = [parameter + str(page) for page in page_index]
 
-			# Create a new list with added parameter
-			pages_with_param = [parameter + str(page) for page in page_index]
+		# Create a list/dictionary with all subpages
+		index_pages_dict[item] = [parameter + str(page) for page in page_index]
 
-			# Create a list/dictionary with all subpages
-			index_pages_dict[item] = [parameter + str(page) for page in page_index]
-
-			sleep(2)
+		sleep(2)
 	except Exception as e:
-		print(f"Error while processing {item}: {e}")
-	else:
-		print("All subpages scraped")
+		print(f"Error while processing {item}: {e}")	
+	finally:
+		driver.close()
+		driver.quit()
+
+def get_subpages(base_url, component_url):
+
+	
+	index_pages_dict = {}
+
+	lock = threading.Lock()
+	threads = []
+
+	for item in component_url:
+		# Speed the process up
+		thread = threading.Thread(target=process_subpages, args=(base_url, index_pages_dict, item, lock))
+		thread.start()
+		threads.append(thread)
+
+	for thread in threads:
+		thread.join()
 
 
-	driver.close()
-	driver.quit()
-
-
+	print("All subpages scraped")
 	return index_pages_dict
+
+def process_url(curr_url, all_product_links, lock):
+	try:
+		# Parse and iterate through the html using bs4
+		product_list_page = requests.get(curr_url)
+		next_soup = BeautifulSoup(product_list_page.content, "html.parser")
+		page_content = next_soup.find("div", class_="product-list-wrapper")
+		product_name = page_content.find_all("h5", class_="product-box-name")
+
+		# Get the actual link for each item
+		for item in product_name:
+			if "Tarjous" not in item.text and "Bundle" not in item.text and "Outlet" not in item.text:
+				product_link = item.find("a", href=True)
+				get_link = product_link.get("href")
+				
+				lock.acquire()
+				all_product_links.append(get_link)
+				lock.release()
+				
+				sleep(0.2)
+			else:
+				print("Skipped reduced or bundled item")
+	except Exception as e:
+		print(f"Error while processing {curr_url}: {e}")
+	else:
+		print(f"{len(all_product_links)} links found")	
+
 
 def get_urls(base_url, index_pages_dict):
 	all_product_links = []
+
+	lock = threading.Lock()
+	threads = []
 
 	# Get links for all the products
 	for key, value in index_pages_dict.items():
 		for index in value:
 			curr_url = base_url + key + index
-			print(curr_url)
 
-			# Parse and iterate through the html using bs4
-			try: 
-				product_list_page = requests.get(curr_url)
-				next_soup = BeautifulSoup(product_list_page.content, "html.parser")
-				page_content = next_soup.find("div", class_="product-list-wrapper")
-				product_name = page_content.find_all("h5", class_="product-box-name")
+			# Speed the process up
+			thread = threading.Thread(target=process_url, args=(curr_url, all_product_links, lock))
+			thread.start()
+			threads.append(thread)
 
-
-				# Get the actual link for each item
-				for item in product_name:
-					if "Tarjous" not in item.text and "Bundle" not in item.text and "Outlet" not in item.text:
-						product_link = item.find("a", href = True)
-						get_link = product_link.get("href")
-
-						all_product_links.append(get_link)
-						#print(get_link)
-						sleep(0.2)
-					else:
-						print("Skipped reduced or bundled item")
-			except Exception as e:
-				print(f"Error while processing {curr_url}: {e}")
-			else:
-				print(f"{len(all_product_links)} links found")
-
-
+	for thread in threads:
+		thread.join()
+	
+	print(f"{len(all_product_links)} links found\n")
+	sleep(2)
 	return all_product_links
+
 
 def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case):
 
@@ -299,10 +338,10 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 			for sibling in trimmed_data_p:
 				if sibling is not None and sibling != "":
-					
+
 					# In case there is a ul item, get it separately
 					if sibling.name == "ul":
-						
+
 						ul_title = sibling.find_previous_sibling()
 						ul_title = ul_title.get_text("\n").strip("\xa0-").strip().splitlines()
 						while True:
@@ -314,8 +353,8 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 						if ":" not in ul_title:
 							ul_title = ul_title + ":"
-							
-							
+
+
 						sibling_trim = sibling.get_text().strip("\xa0-").strip().splitlines()
 
 						if not any(":" in skip for skip in sibling_trim):
@@ -327,7 +366,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						else:
 							ul_item = f"{ul_title} {sibling_trim}"
 							desc_list.append(ul_item)
-						
+
 						# Delete unnecessary list items
 						try:
 							index = desc_list.index(ul_title)
@@ -340,7 +379,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 							except:
 								print("Something went wrong")
 
-							
+
 					else:
 						# If the item is not a ul item
 						sibling_trim = sibling.get_text("\n")
@@ -349,7 +388,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						if len(newline_trim) > 0 and newline_trim != "":
 							for final_item in newline_trim:
 									desc_list.append(final_item)
-									
+
 				desc_list = [x for x in desc_list if x != "" and x != ":"]
 				# Remove everything before Tekniset tiedot
 				if "Tekniset tiedot:" in desc_list:
@@ -358,7 +397,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				elif "Tekniset tiedot" in desc_list:
 					index = desc_list.index("Tekniset tiedot")
 					desc_list = desc_list[index:]
-				
+
 				# Format items better
 				try:
 					for i, item in enumerate(desc_list):
@@ -372,14 +411,14 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					print(f"Error: {e}")
 				except:
 					print("Undefined error")
-					
+
 
 
 
 		sleep(0.1)
 
 		#pprint(name_list)
-		pprint(desc_list)
+		#pprint(desc_list)
 
 
 		# Use special searches in case of bad HTML formatting
@@ -414,7 +453,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 		core_count = None
 		thread_count = None
 		base_clock = None
-		l3_cache = None
+		cpu_cache = None
 		socket = None
 		cpu_cooler = None
 		tdp = None
@@ -427,6 +466,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 		fan_rpm = None
 		noise_level = None
 
+
 		# Depending on what category is active, sort the data to the respective variables
 		for desc in desc_list:
 
@@ -435,7 +475,8 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 				if "SSD-LEVY" in trimmed_name.upper():
 					trimmed_name = trimmed_name.upper().strip("SSD-LEVY").strip().capitalize()
-
+				# Try this V	
+				#if any(s in desc.upper() for s in ["KAPASITEETTI", "MUISTIN KOKO"]) and ":" in desc and desc.index(":") > desc.upper().index("KAPASITEETTI") and not desc.strip().endswith(":"):
 				if any(s in desc.upper() for s in ["KAPASITEETTI", "MUISTIN KOKO"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if capacity is None:
 						capacity = desc
@@ -455,7 +496,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						else:
 							cache = desc
 
-				elif any(s in desc.upper() for s in ["MUISTITYYPPI", "TALLENNUSMUISTI", "FLASH"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["MUISTITYYPPI", "TALLENNUSMUISTI", "FLASH", "NAND"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if flash is None:
 						flash = desc
 
@@ -473,7 +514,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					elif chipset is None:
 						chipset = desc
 
-							
+
 
 				elif any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") or mobo_ff_list is not None:
 					if mobo_ff_list is not None:
@@ -578,8 +619,8 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						base_clock = desc
 
 				elif any(s in desc.upper() for s in ["L3"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
-					if l3_cache is None:
-						l3_cache = desc
+					if cpu_cache is None:
+						cpu_cache = desc
 
 				elif any(s in desc.upper() for s in ["KANTA", "YHTEENSOPIVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if socket is None:
@@ -664,7 +705,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			"case_list": [case_type, dimensions, color, compatibility],
 			"ram_list": [mem_type, amount, speed, latency],
 			"gpu_list": [cores, clock, memory, interface, dimensions, tdp],
-			"cpu_list": [core_count, thread_count, base_clock, l3_cache, socket, cpu_cooler, tdp, igpu],
+			"cpu_list": [core_count, thread_count, base_clock, cpu_cache, socket, cpu_cooler, tdp, igpu],
 			"psu_list": [atx12v, efficiency, modular, dimensions],
 			"cooler_list": [compatibility, cooling_potential, fan_rpm, noise_level, dimensions],
 		}
@@ -795,7 +836,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				"Core Count": item_list[0],
 				"Thread Count": item_list[1],
 				"Base Clock": item_list[2],
-				"L3 Cache": item_list[3],
+				"Cache": item_list[3],
 				"Socket": item_list[4],
 				"Cpu Cooler": item_list[5],
 				"TDP": item_list[6],
