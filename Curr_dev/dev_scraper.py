@@ -24,10 +24,8 @@ from sqlalchemy import create_engine
 def main():
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
-	product_url = "/fi/Product/Show/"
-	component_url = ["/fi/Product/List/000-00R/komponentit--prosessorit"]
-	
-	component_url2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00M/komponentit--lisakortit", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	product_url = "/fi/Product/Show/"	
+	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
@@ -334,7 +332,6 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			desc_list = []
 
 			trimmed_data_p = results_item.contents
-			print("trimmed_data_p")
 
 			for sibling in trimmed_data_p:
 				if sibling is not None and sibling != "":
@@ -343,16 +340,19 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if sibling.name == "ul":
 
 						ul_title = sibling.find_previous_sibling()
-						ul_title = ul_title.get_text("\n").strip("\xa0-").strip().splitlines()
-						while True:
-							if ul_title[-1] == ":" or ul_title[-1] == "":
-								del ul_title[-1]
-							else:
-								ul_title = ul_title[-1]
-								break
+						if ul_title:
+							ul_title = ul_title.get_text("\n").strip("\xa0-").strip().splitlines()
+							while True:
+								if ul_title[-1] == ":" or ul_title[-1] == "":
+									del ul_title[-1]
+								else:
+									ul_title = ul_title[-1]
+									break
 
-						if ":" not in ul_title:
-							ul_title = ul_title + ":"
+							if ":" not in ul_title:
+								ul_title = ul_title + ":"
+						else:
+							ul_title = None
 
 
 						sibling_trim = sibling.get_text().strip("\xa0-").strip().splitlines()
