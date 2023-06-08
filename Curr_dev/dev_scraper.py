@@ -167,7 +167,7 @@ def trim_list(item_list):
 	return item_list
 
 
-def process_subpages(base_url, index_pages_dict, item, lock):
+def process_subpages(base_url, index_pages_dict, item):
 	# Create selenium instance
 	driver_path = "./chromedriver_win32/chromedriver.exe"
 	driver = webdriver.Chrome(executable_path = driver_path)
@@ -194,9 +194,7 @@ def process_subpages(base_url, index_pages_dict, item, lock):
 		# Add subpage numbers to page_index
 		page_nums = range(page_index[0] + 1, page_index[1])
 		for num in page_nums:
-			lock.acquire()
 			page_index.append(num)
-			lock.release()
 			page_index.sort()
 
 		# Create a new list with added parameter
@@ -213,16 +211,13 @@ def process_subpages(base_url, index_pages_dict, item, lock):
 		driver.quit()
 
 def get_subpages(base_url, component_url):
-
-	
 	index_pages_dict = {}
 
-	lock = threading.Lock()
 	threads = []
 
 	for item in component_url:
 		# Speed the process up
-		thread = threading.Thread(target=process_subpages, args=(base_url, index_pages_dict, item, lock))
+		thread = threading.Thread(target=process_subpages, args=(base_url, index_pages_dict, item))
 		thread.start()
 		threads.append(thread)
 
@@ -235,25 +230,27 @@ def get_subpages(base_url, component_url):
 
 def process_url(curr_url, all_product_links, lock):
 	try:
+		# Add a lock to the threading to keep the parts ordered
+		lock.acquire()
 		# Parse and iterate through the html using bs4
 		product_list_page = requests.get(curr_url)
 		next_soup = BeautifulSoup(product_list_page.content, "html.parser")
 		page_content = next_soup.find("div", class_="product-list-wrapper")
 		product_name = page_content.find_all("h5", class_="product-box-name")
-
+		lock.release()
+		
 		# Get the actual link for each item
 		for item in product_name:
 			if "Tarjous" not in item.text and "Bundle" not in item.text and "Outlet" not in item.text:
 				product_link = item.find("a", href=True)
 				get_link = product_link.get("href")
 				
-				lock.acquire()
 				all_product_links.append(get_link)
-				lock.release()
 				
 				sleep(0.2)
 			else:
 				print("Skipped reduced or bundled item")
+			
 	except Exception as e:
 		print(f"Error while processing {curr_url}: {e}")
 	else:
@@ -261,11 +258,11 @@ def process_url(curr_url, all_product_links, lock):
 
 
 def get_urls(base_url, index_pages_dict):
+	url_start = time.time()
 	all_product_links = []
 
 	lock = threading.Lock()
 	threads = []
-
 	# Get links for all the products
 	for key, value in index_pages_dict.items():
 		for index in value:
@@ -279,7 +276,9 @@ def get_urls(base_url, index_pages_dict):
 	for thread in threads:
 		thread.join()
 	
-	print(f"{len(all_product_links)} links found\n")
+	url_end = time.time()
+	url_time = url_end - url_start
+	print(f"Url time: {url_time:.2f}\n{len(all_product_links)} links found\n")
 	sleep(2)
 	return all_product_links
 
@@ -696,190 +695,195 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						dimensions = desc
 
 			else:
+				part_type = "invalid"
 				print("Something went wrong. Category:", get_category)
-
-		# Create a dictionary with all of the chosen data
-		part_lists_dict = {
-			"storage_list": [capacity, form_factor, interface, cache, flash, tbw],
-			"mobo_list": [chipset, form_factor, memory_compatibility],
-			"case_list": [case_type, dimensions, color, compatibility],
-			"ram_list": [mem_type, amount, speed, latency],
-			"gpu_list": [cores, clock, memory, interface, dimensions, tdp],
-			"cpu_list": [core_count, thread_count, base_clock, cpu_cache, socket, cpu_cooler, tdp, igpu],
-			"psu_list": [atx12v, efficiency, modular, dimensions],
-			"cooler_list": [compatibility, cooling_potential, fan_rpm, noise_level, dimensions],
-		}
-
-		# Choose the correct dictionary
-		if part_type == "storage":
-			item_list = part_lists_dict["storage_list"]
-		elif part_type == "mobo":
-			item_list = part_lists_dict["mobo_list"]
-		elif part_type == "case":
-			item_list = part_lists_dict["case_list"]
-		elif part_type == "ram":
-			item_list = part_lists_dict["ram_list"]
-		elif part_type == "gpu":
-			item_list = part_lists_dict["gpu_list"]
-		elif part_type == "cpu":
-			item_list = part_lists_dict["cpu_list"]
-		elif part_type == "psu":
-			item_list = part_lists_dict["psu_list"]
-		elif part_type == "cooler":
-			item_list = part_lists_dict["cooler_list"]
-
-		item_list = trim_list(item_list)
-		#pprint(item_list)
-
-		# Final trimming
-		if part_type == "gpu" and item_list[5] and item_list[5] != None:
-			if "VÄHINTÄÄN" in item_list[5].upper():
-				item_list[5] = item_list[5].upper().strip("VÄHINTÄÄN")
-
-		if part_type == "mobo" and item_list[2] and item_list[2] != None:
-			item_list[2] = item_list[2].strip(",")
-
-		if part_type == "cpu" and item_list[0] and item_list[0] != None:
-			item_list[0] = item_list[0].strip("-ydin")
-
-		# Create final dictionaries for all parts, ready for database insertion
-		if part_type == "storage":
-			storage_dict = {
-				"Url": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Capacity": item_list[0],
-				"Form Factor": item_list[1],
-				"Interface": item_list[2],
-				"Cache": item_list[3],
-				"Flash": item_list[4],
-				"TBW": item_list[5],
+				
+				
+		if part_type != "invalid":
+			# Create a dictionary with all of the chosen data
+			part_lists_dict = {
+				"storage_list": [capacity, form_factor, interface, cache, flash, tbw],
+				"mobo_list": [chipset, form_factor, memory_compatibility],
+				"case_list": [case_type, dimensions, color, compatibility],
+				"ram_list": [mem_type, amount, speed, latency],
+				"gpu_list": [cores, clock, memory, interface, dimensions, tdp],
+				"cpu_list": [core_count, thread_count, base_clock, cpu_cache, socket, cpu_cooler, tdp, igpu],
+				"psu_list": [atx12v, efficiency, modular, dimensions],
+				"cooler_list": [compatibility, cooling_potential, fan_rpm, noise_level, dimensions],
 			}
-			pprint(storage_dict)
-			i = insert(Storage).values(storage_dict)
-			session.execute(i)
-			session.commit()
 
-		elif part_type == "mobo":
-			mobo_dict = {
-				"Url": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Chipset": item_list[0],
-				"Form Factor": item_list[1],
-				"Memory Compatibility": item_list[2],
-			}
-			pprint(mobo_dict)
-			i = insert(Motherboard).values(mobo_dict)
-			session.execute(i)
-			session.commit()
+			# Choose the correct dictionary
+			if part_type == "storage":
+				item_list = part_lists_dict["storage_list"]
+			elif part_type == "mobo":
+				item_list = part_lists_dict["mobo_list"]
+			elif part_type == "case":
+				item_list = part_lists_dict["case_list"]
+			elif part_type == "ram":
+				item_list = part_lists_dict["ram_list"]
+			elif part_type == "gpu":
+				item_list = part_lists_dict["gpu_list"]
+			elif part_type == "cpu":
+				item_list = part_lists_dict["cpu_list"]
+			elif part_type == "psu":
+				item_list = part_lists_dict["psu_list"]
+			elif part_type == "cooler":
+				item_list = part_lists_dict["cooler_list"]
 
-		elif part_type == "case":
-			case_dict = {
-				"Url": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Case type": item_list[0],
-				"Dimensions": item_list[1],
-				"Color": item_list[2],
-				"Compatibility": item_list[3],
+			item_list = trim_list(item_list)
+			#pprint(item_list)
 
-			}
-			pprint(case_dict)
-			i = insert(Case).values(case_dict)
-			session.execute(i)
-			session.commit()
+			# Final trimming
+			if part_type == "gpu" and item_list[5] and item_list[5] != None:
+				if "VÄHINTÄÄN" in item_list[5].upper():
+					item_list[5] = item_list[5].upper().strip("VÄHINTÄÄN")
 
-		elif part_type == "ram":
-			ram_dict = {
-				"Url": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Type": item_list[0],
-				"Amount": item_list[1],
-				"Speed": item_list[2],
-				"Latency": item_list[3],
-			}
-			pprint(ram_dict)
-			i = insert(Memory).values(ram_dict)
-			session.execute(i)
-			session.commit()
+			if part_type == "mobo" and item_list[2] and item_list[2] != None:
+				item_list[2] = item_list[2].strip(",")
 
-		elif part_type == "gpu":
-			gpu_dict = {
-				"Url": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Cores": item_list[0],
-				"Core Clock": item_list[1],
-				"Memory": item_list[2],
-				"Interface": item_list[3],
-				"Dimensions": item_list[4],
-				"TDP": item_list[5],
-			}
-			pprint(gpu_dict)
-			i = insert(GPU).values(gpu_dict)
-			session.execute(i)
-			session.commit()
+			if part_type == "cpu" and item_list[0] and item_list[0] != None:
+				item_list[0] = item_list[0].strip("-ydin")
 
-		elif part_type == "cpu":
-			cpu_dict = {
-				"Url": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Core Count": item_list[0],
-				"Thread Count": item_list[1],
-				"Base Clock": item_list[2],
-				"Cache": item_list[3],
-				"Socket": item_list[4],
-				"Cpu Cooler": item_list[5],
-				"TDP": item_list[6],
-				"Integrated GPU": item_list[7],
-			}
-			pprint(cpu_dict)
-			i = insert(CPU).values(cpu_dict)
-			session.execute(i)
-			session.commit()
+			# Create final dictionaries for all parts, ready for database insertion
+			if part_type == "storage":
+				storage_dict = {
+					"Url": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Capacity": item_list[0],
+					"Form Factor": item_list[1],
+					"Interface": item_list[2],
+					"Cache": item_list[3],
+					"Flash": item_list[4],
+					"TBW": item_list[5],
+				}
+				pprint(storage_dict)
+				i = insert(Storage).values(storage_dict)
+				session.execute(i)
+				session.commit()
 
-		elif part_type == "psu":
-			psu_dict = {
-				"Url": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Is ATX12V": item_list[0],
-				"Efficiency": item_list[1],
-				"Modular": item_list[2],
-				"Dimensions": item_list[3],
-			}
-			pprint(psu_dict)
-			i = insert(PSU).values(psu_dict)
-			session.execute(i)
-			session.commit()
+			elif part_type == "mobo":
+				mobo_dict = {
+					"Url": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Chipset": item_list[0],
+					"Form Factor": item_list[1],
+					"Memory Compatibility": item_list[2],
+				}
+				pprint(mobo_dict)
+				i = insert(Motherboard).values(mobo_dict)
+				session.execute(i)
+				session.commit()
 
-		elif part_type == "cooler":
-			cooler_dict = {
-				"Url": curr_link,
-				"Price": m_price,
-				"Name": trimmed_name,
-				"Manufacturer": m_manufacturer,
-				"Compatibility": item_list[0],
-				"Cooling Potential": item_list[1],
-				"Fan RPM": item_list[2],
-				"Noise Level": item_list[3],
-				"Dimensions": item_list[4],
-			}
-			pprint(cooler_dict)
-			i = insert(Cooler).values(cooler_dict)
-			session.execute(i)
-			session.commit()
+			elif part_type == "case":
+				case_dict = {
+					"Url": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Case type": item_list[0],
+					"Dimensions": item_list[1],
+					"Color": item_list[2],
+					"Compatibility": item_list[3],
 
-		sleep(0.1)
+				}
+				pprint(case_dict)
+				i = insert(Case).values(case_dict)
+				session.execute(i)
+				session.commit()
+
+			elif part_type == "ram":
+				ram_dict = {
+					"Url": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Type": item_list[0],
+					"Amount": item_list[1],
+					"Speed": item_list[2],
+					"Latency": item_list[3],
+				}
+				pprint(ram_dict)
+				i = insert(Memory).values(ram_dict)
+				session.execute(i)
+				session.commit()
+
+			elif part_type == "gpu":
+				gpu_dict = {
+					"Url": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Cores": item_list[0],
+					"Core Clock": item_list[1],
+					"Memory": item_list[2],
+					"Interface": item_list[3],
+					"Dimensions": item_list[4],
+					"TDP": item_list[5],
+				}
+				pprint(gpu_dict)
+				i = insert(GPU).values(gpu_dict)
+				session.execute(i)
+				session.commit()
+
+			elif part_type == "cpu":
+				cpu_dict = {
+					"Url": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Core Count": item_list[0],
+					"Thread Count": item_list[1],
+					"Base Clock": item_list[2],
+					"Cache": item_list[3],
+					"Socket": item_list[4],
+					"Cpu Cooler": item_list[5],
+					"TDP": item_list[6],
+					"Integrated GPU": item_list[7],
+				}
+				pprint(cpu_dict)
+				i = insert(CPU).values(cpu_dict)
+				session.execute(i)
+				session.commit()
+
+			elif part_type == "psu":
+				psu_dict = {
+					"Url": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Is ATX12V": item_list[0],
+					"Efficiency": item_list[1],
+					"Modular": item_list[2],
+					"Dimensions": item_list[3],
+				}
+				pprint(psu_dict)
+				i = insert(PSU).values(psu_dict)
+				session.execute(i)
+				session.commit()
+
+			elif part_type == "cooler":
+				cooler_dict = {
+					"Url": curr_link,
+					"Price": m_price,
+					"Name": trimmed_name,
+					"Manufacturer": m_manufacturer,
+					"Compatibility": item_list[0],
+					"Cooling Potential": item_list[1],
+					"Fan RPM": item_list[2],
+					"Noise Level": item_list[3],
+					"Dimensions": item_list[4],
+				}
+				pprint(cooler_dict)
+				i = insert(Cooler).values(cooler_dict)
+				session.execute(i)
+				session.commit()
+
+			sleep(0.1)
+		else:
+			print("Invalid part type!")
 
 main()
