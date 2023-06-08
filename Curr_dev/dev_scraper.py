@@ -6,6 +6,7 @@ import database
 import requests
 import time
 import threading
+from queue import Queue
 from pathlib import Path
 from bs4 import BeautifulSoup
 from time import sleep as sleep
@@ -22,14 +23,18 @@ from sqlalchemy import create_engine
 
 
 def main():
+	# Timer for whole program
+	program_start = time.time()
+	
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"	
-	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	component_url = ["/fi/Product/List/000-00P/komponentit--naytonohjaimet"]
+	
+	component_url2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
-
 	if not speed_passed:
 		speed_input = input(f"Speedtest either failed or was low, do you still want to continue? (Y/yes) \n")
 
@@ -43,12 +48,20 @@ def main():
 
 	index_pages_dict = get_subpages(base_url, component_url)
 	all_product_links = get_urls(base_url, index_pages_dict)
-
 	sleep(2)
+	scraper_start = time.time()
 	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case)
 	session.close()
-	print("\n\n")
-	print("Scraping completed")
+	
+	scraper_end = time.time()
+	scraper_time = scraper_end - scraper_start
+	print(f"\n\nScraper time: {scraper_time}")
+	
+	print("Scraping completed\n")
+	
+	program_end = time.time()
+	program_time = program_end - program_start
+	print(f"The program ran for {program_time} seconds!")
 
 def check_download_speed(url):
 	# Get the values for the download speed
@@ -242,10 +255,12 @@ def process_url(curr_url, all_product_links, lock):
 		# Get the actual link for each item
 		for item in product_name:
 			if "Tarjous" not in item.text and "Bundle" not in item.text and "Outlet" not in item.text:
+				lock.acquire()
 				product_link = item.find("a", href=True)
 				get_link = product_link.get("href")
 				
 				all_product_links.append(get_link)
+				lock.release()
 				
 				sleep(0.2)
 			else:
@@ -284,141 +299,142 @@ def get_urls(base_url, index_pages_dict):
 
 
 def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case):
-
 	for product in all_product_links:
-		curr_link = base_url + product
-		item_page = requests.get(curr_link, allow_redirects=True)
-		item_soup = BeautifulSoup(item_page.content, "html.parser")
-
-		# Get product category
-		category_link = item_soup.find_all("a", class_="link-secondary")[2]
-		get_category = category_link.get("href")
-
-
-		# Testing getting the data with metadata
-		m_manufacturer = get_meta(item_soup, {"property": "product:brand"})
-		m_price = get_meta(item_soup, {"property": "product:price:amount"})
-		m_desc = get_meta(item_soup, {"property": "og:description"})
-
-		# Get the short description 
-		short_desc = item_soup.find(class_="jim-product-cta-box-shortdescription")
-		if short_desc:
-			short_desc = short_desc.get_text().strip("\xa0-").strip().split(", ")
-
-		# Get the name
-		name_location = item_soup.find("h1")
-		name_item = name_location.find_all("span", itemprop="name")
-
-		name_list = []
-		for name in name_item:
-			for trim in name.stripped_strings:
-				if trim and trim not in name_list:
-					name_list.append(trim)
-
-		trimmed_name = name_list[1].split(",", 1)
-		trimmed_name = trimmed_name[0].strip().capitalize()
-
-
-		# Get the description
-		results_item = item_soup.find("div", itemprop="description")
-
-
-		# Get all of the description data and trim it
-		print("Current page:", curr_link)
-		desc_data = results_item.select_one("strong:-soup-contains('Tekniset tiedot')")
-		#desc_data = results_item.select_one(":contains('Tekniset tiedot')")
-		if desc_data is not None:
+		try:
 			desc_list = []
+			curr_link = base_url + product
 
-			trimmed_data_p = results_item.contents
+			item_page = requests.get(curr_link, allow_redirects=True)
+			item_soup = BeautifulSoup(item_page.content, "html.parser")
 
-			for sibling in trimmed_data_p:
-				if sibling is not None and sibling != "":
-
-					# In case there is a ul item, get it separately
-					if sibling.name == "ul":
-
-						ul_title = sibling.find_previous_sibling()
-						if ul_title:
-							ul_title = ul_title.get_text("\n").strip("\xa0-").strip().splitlines()
-							while True:
-								if ul_title[-1] == ":" or ul_title[-1] == "":
-									del ul_title[-1]
-								else:
-									ul_title = ul_title[-1]
-									break
-
-							if ":" not in ul_title:
-								ul_title = ul_title + ":"
-						else:
-							ul_title = None
+			# Get product category
+			category_link = item_soup.find_all("a", class_="link-secondary")[2]
+			get_category = category_link.get("href")
 
 
-						sibling_trim = sibling.get_text().strip("\xa0-").strip().splitlines()
+			# Testing getting the data with metadata
+			m_manufacturer = get_meta(item_soup, {"property": "product:brand"})
+			m_price = get_meta(item_soup, {"property": "product:price:amount"})
+			m_desc = get_meta(item_soup, {"property": "og:description"})
 
-						if not any(":" in skip for skip in sibling_trim):
-							sibling_trim = "; ".join(sibling_trim)
+			# Get the short description 
+			short_desc = item_soup.find(class_="jim-product-cta-box-shortdescription")
+			if short_desc:
+				short_desc = short_desc.get_text().strip("\xa0-").strip().split(", ")
 
-						if isinstance(sibling_trim, list):
-							for list_item in sibling_trim:
-								desc_list.append(list_item)
-						else:
-							ul_item = f"{ul_title} {sibling_trim}"
-							desc_list.append(ul_item)
+			# Get the name
+			name_location = item_soup.find("h1")
+			name_item = name_location.find_all("span", itemprop="name")
 
-						# Delete unnecessary list items
-						try:
-							index = desc_list.index(ul_title)
-							del desc_list[index]
-						except ValueError:
+			name_list = []
+			for name in name_item:
+				for trim in name.stripped_strings:
+					if trim and trim not in name_list:
+						name_list.append(trim)
+
+			trimmed_name = name_list[1].split(",", 1)
+			trimmed_name = trimmed_name[0].strip().capitalize()
+
+
+			# Get the description
+			results_item = item_soup.find("div", itemprop="description")
+
+
+			# Get all of the description data and trim it
+			print("Current page:", curr_link)
+			#desc_data = results_item.select_one("strong:-soup-contains('Tekniset tiedot')") # Default
+			#desc_data = results_item.select_one(":contains('Tekniset tiedot')")
+			#if desc_data:
+			if results_item:
+				trimmed_data_p = results_item.contents
+
+				for sibling in trimmed_data_p:
+					if sibling is not None and sibling != "":
+
+						# In case there is a ul item, get it separately
+						if sibling.name == "ul":
+
+							ul_title = sibling.find_previous_sibling()
+							if ul_title:
+								ul_title = ul_title.get_text("\n").strip("\xa0-").strip().splitlines()
+								while True:
+									if ul_title[-1] == ":" or ul_title[-1] == "":
+										del ul_title[-1]
+									else:
+										ul_title = ul_title[-1]
+										break
+
+								if ":" not in ul_title:
+									ul_title = ul_title + ":"
+							else:
+								ul_title = None
+
+
+							sibling_trim = sibling.get_text().strip("\xa0-").strip().splitlines()
+
+							if not any(":" in skip for skip in sibling_trim):
+								sibling_trim = "; ".join(sibling_trim)
+
+							if isinstance(sibling_trim, list):
+								for list_item in sibling_trim:
+									desc_list.append(list_item)
+							else:
+								ul_item = f"{ul_title} {sibling_trim}"
+								desc_list.append(ul_item)
+
+							# Delete unnecessary list items
 							try:
-								ul_title = ul_title.rstrip(":").rstrip()
 								index = desc_list.index(ul_title)
 								del desc_list[index]
-							except:
-								print("Something went wrong")
+							except ValueError:
+								try:
+									ul_title = ul_title.rstrip(":").rstrip()
+									index = desc_list.index(ul_title)
+									del desc_list[index]
+								except:
+									print("Something went wrong")
 
 
-					else:
-						# If the item is not a ul item
-						sibling_trim = sibling.get_text("\n")
-						tt_trim = sibling_trim.strip("\xa0-").strip()
-						newline_trim = tt_trim.splitlines()
-						if len(newline_trim) > 0 and newline_trim != "":
-							for final_item in newline_trim:
-									desc_list.append(final_item)
+						else:
+							# If the item is not a ul item
+							sibling_trim = sibling.get_text("\n")
+							tt_trim = sibling_trim.strip("\xa0-").strip()
+							newline_trim = tt_trim.splitlines()
+							if len(newline_trim) > 0 and newline_trim != "":
+								for final_item in newline_trim:
+										desc_list.append(final_item)
 
-				desc_list = [x for x in desc_list if x != "" and x != ":"]
-				# Remove everything before Tekniset tiedot
-				if "Tekniset tiedot:" in desc_list:
-					index = desc_list.index("Tekniset tiedot:")
-					desc_list = desc_list[index:]
-				elif "Tekniset tiedot" in desc_list:
-					index = desc_list.index("Tekniset tiedot")
-					desc_list = desc_list[index:]
+					desc_list = [x for x in desc_list if x != "" and x != ":"]
+					# Remove everything before the specs
+					if "Tekniset tiedot:" in desc_list:
+						index = desc_list.index("Tekniset tiedot:")
+						desc_list = desc_list[index:]
+					elif "Tekniset tiedot" in desc_list:
+						index = desc_list.index("Tekniset tiedot")
+						desc_list = desc_list[index:]
 
-				# Format items better
-				try:
-					for i, item in enumerate(desc_list):
-						if item.startswith(":"):
-							desc_list[i] = desc_list[i-1] + desc_list[i]
-							del desc_list[i-1]
-						if item.endswith(":"):
-							desc_list[i] = desc_list[i] + desc_list[i+1]
-							del desc_list[i+1]
-				except IndexError as e:
-					print(f"Error: {e}")
-				except:
-					print("Undefined error")
+					# Format items better
+					try:
+						for i, item in enumerate(desc_list):
+							if item.startswith(":"):
+								desc_list[i] = desc_list[i-1] + desc_list[i]
+								del desc_list[i-1]
+							if item.endswith(":"):
+								desc_list[i] = desc_list[i] + desc_list[i+1]
+								del desc_list[i+1]
+					except IndexError as e:
+						print(f"Error: {e}")
+					except Exception as e:
+						print(f"Something went wrong: {e}")
+				sleep(0.1)
 
+		except Exception as e:
+			print(f"Something went wrong: {e}")
+			
 
-
-
-		sleep(0.1)
 
 		#pprint(name_list)
-		#pprint(desc_list)
-
+		pprint(desc_list)
 
 		# Use special searches in case of bad HTML formatting
 		if "/fi/Product/List/000-00H" in get_category:
@@ -468,6 +484,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 		# Depending on what category is active, sort the data to the respective variables
 		for desc in desc_list:
+			#print("test3")
 
 			if "/fi/Product/List/000-00K" in get_category:
 				part_type = "storage"
@@ -697,9 +714,11 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			else:
 				part_type = "invalid"
 				print("Something went wrong. Category:", get_category)
+				break
 				
-				
-		if part_type != "invalid":
+
+		#print("test2")	
+		if part_type and part_type != "invalid":
 			# Create a dictionary with all of the chosen data
 			part_lists_dict = {
 				"storage_list": [capacity, form_factor, interface, cache, flash, tbw],
@@ -743,7 +762,6 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 			if part_type == "cpu" and item_list[0] and item_list[0] != None:
 				item_list[0] = item_list[0].strip("-ydin")
-
 			# Create final dictionaries for all parts, ready for database insertion
 			if part_type == "storage":
 				storage_dict = {
@@ -885,5 +903,6 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			sleep(0.1)
 		else:
 			print("Invalid part type!")
+
 
 main()
