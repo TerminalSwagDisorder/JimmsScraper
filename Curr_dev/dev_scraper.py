@@ -6,7 +6,6 @@ import database
 import requests
 import time
 import threading
-from queue import Queue
 from pathlib import Path
 from bs4 import BeautifulSoup
 from time import sleep as sleep
