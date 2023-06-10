@@ -14,6 +14,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from selenium.common.exceptions import StaleElementReferenceException
 from pprint import pprint as pprint
 from sqlalchemy import *
@@ -181,7 +182,8 @@ def trim_list(item_list):
 def process_subpages(base_url, index_pages_dict, item):
 	# Create selenium instance
 	driver_path = "./chromedriver_win32/chromedriver.exe"
-	driver = webdriver.Chrome(executable_path = driver_path)
+	service = Service(driver_path)
+	driver = webdriver.Chrome(service = service)
 	
 	# Get subpages for all components
 	try: 
