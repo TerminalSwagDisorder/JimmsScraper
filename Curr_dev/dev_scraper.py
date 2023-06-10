@@ -903,5 +903,5 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 		else:
 			print("Invalid part type!")
 
-
-main()
+if __name__ == "__main__":
+	main()
