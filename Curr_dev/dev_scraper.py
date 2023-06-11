@@ -529,14 +529,11 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					elif chipset is None:
 						chipset = desc
 
-
-
 				elif any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") or mobo_ff_list is not None:
 					if mobo_ff_list is not None:
 						form_factor = mobo_ff_list
 					elif form_factor is None:
 						form_factor = desc
-
 
 				elif any(s in desc.upper() for s in ["DIMM"]) and ":" in desc.upper() and not desc.strip().endswith(":") or mobo_memory_list is not None:
 					if mobo_memory_list is not None:
@@ -553,15 +550,15 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if case_type is None:
 						case_type = desc
 
-				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK", "DIMENSIONS", "KOKO", "(LXKXS)", "PITUUS", "KORKEUS", "PITUUS", "SYVYYS", "KOTELO", "LEVEYS", "TILAVUUS", "L X K X S"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
 						dimensions = desc
 
-				elif any(s in desc.upper() for s in ["VÄRI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["VÄRI", "MALLI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if color is None:
 						color = desc
 
-				elif any(s in desc.upper() for s in ["YHTEENSOPIVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["YHTEENSOPIVUUS", "EMOLEVY", "EMOLEVYT", "MOTHERBOARD TYPES", "MOTHERBOARDS TYPES", "SOPIVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if compatibility is None:
 						compatibility = desc
 
@@ -593,7 +590,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				if "NÄYTÖNOHJAIN" in trimmed_name.upper():
 					trimmed_name = trimmed_name.upper().strip("NÄYTÖNOHJAIN").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
 
-				if any(s in desc.upper() for s in ["CUDA", "STREAM-PROSESSORIT"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				if any(s in desc.upper() for s in ["CUDA", "STREAM-PROSESSORIT", "CUDA CORET", "CUDA -CORET"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if cores is None:
 						cores = desc
 
@@ -601,7 +598,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if clock is None:
 						clock = desc
 
-				elif any(s in desc.upper() for s in ["MÄÄRÄ"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["MÄÄRÄ", "KOKO", "MUISTI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if memory is None:
 						memory = desc
 
@@ -629,7 +626,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if thread_count is None:
 						thread_count = desc
 
-				elif any(s in desc.upper() for s in ["KELLOTAAJUUS", "BASE CLOCK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["KELLOTAAJUUS", "BASE CLOCK", "BASE"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if base_clock is None:
 						base_clock = desc
 
@@ -641,11 +638,11 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if socket is None:
 						socket = desc
 
-				elif any(s in desc.upper() for s in ["JÄÄHDYTYS", "YHTEENSOPIVUUS"]) and not "EI SIS" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["JÄÄHDYTYS", "YHTEENSOPIVUUS", "JÄÄHDYTIN"]) and not "EI SIS" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if cpu_cooler is None:
 						cpu_cooler = desc
 
-				elif any(s in desc.upper() for s in ["TDP"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["TDP", "THERMAL DESIGN POWER", "BASE POWER"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if tdp is None:
 						tdp = desc
 
