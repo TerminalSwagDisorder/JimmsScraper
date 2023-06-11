@@ -550,7 +550,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if case_type is None:
 						case_type = desc
 
-				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK", "DIMENSIONS", "KOKO", "(LXKXS)", "PITUUS", "KORKEUS", "PITUUS", "SYVYYS", "KOTELO", "LEVEYS", "TILAVUUS", "L X K X S"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK", "DIMENSIONS", "(LXKXS)", "PITUUS", "KORKEUS", "PITUUS", "SYVYYS", "KOTELO", "LEVEYS", "TILAVUUS", "L X K X S"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
 						dimensions = desc
 
