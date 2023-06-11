@@ -53,13 +53,13 @@ def main():
 	
 	scraper_end = time.time()
 	scraper_time = scraper_end - scraper_start
-	print(f"\n\nScraper time: {scraper_time}")
+	print(f"\n\nScraper time: {scraper_time:.2f}")
 	
 	print("Scraping completed\n")
 	
 	program_end = time.time()
 	program_time = program_end - program_start
-	print(f"The program ran for {program_time} seconds!")
+	print(f"The program ran for {program_time:.2f} seconds!")
 
 def check_download_speed(url):
 	# Get the values for the download speed
@@ -292,7 +292,7 @@ def get_urls(base_url, index_pages_dict):
 	
 	url_end = time.time()
 	url_time = url_end - url_start
-	print(f"Url time: {url_time:.2f}\n{len(all_product_links)} links found\n")
+	print(f"Url time: {url_time:.2f}\nFinal amount of valid links: {len(all_product_links)}\n")
 	sleep(2)
 	return all_product_links
 
