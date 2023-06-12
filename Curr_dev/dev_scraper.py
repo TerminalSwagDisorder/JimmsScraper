@@ -312,9 +312,24 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			item_page = requests.get(curr_link, allow_redirects=True)
 			item_soup = BeautifulSoup(item_page.content, "html.parser")
 
-			# Get product category
+			# Get product categories of varying importance
 			category_link = item_soup.find_all("a", class_="link-secondary")[2]
 			get_category = category_link.get("href")
+			
+			try:
+				type_link = item_soup.find_all("a", class_="link-secondary")[3]
+				get_type = type_link.get("href")
+				type_text = type_link.get_text()
+				
+			except:
+				print("Cannot get product type link")
+				
+			try:
+				spec_link = item_soup.find_all("a", class_="link-secondary")[4]
+				get_spec = spec_link.get("href")
+				spec_text = spec_link.get_text()
+			except:
+				print("Cannot get product spec link")
 
 
 			# Testing getting the data with metadata
@@ -407,10 +422,17 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 							newline_trim = tt_trim.splitlines()
 							if len(newline_trim) > 0 and newline_trim != "":
 								for final_item in newline_trim:
+									final_item = final_item.strip()
 									if ":N" in final_item.upper():
 										final_item = final_item.upper().replace(":N", "")
-									if "-" in final_item:
-										final_item = final_item.lstrip("-").strip()
+									if "\xa0-" in final_item or "\XA0-" in final_item:
+										final_item = final_item.replace("\xa0-", "").strip()
+										final_item = final_item.replace("\XA0-", "").strip()
+									if final_item.startswith("-"):
+										if ":" in final_item:
+											final_item = final_item.replace("-", "", 1).strip()
+										elif ":" not in final_item:
+											final_item = final_item.replace("-", ":", 1).strip()
 									desc_list.append(final_item)
 
 					desc_list = [x for x in desc_list if x != "" and x != ":"]
@@ -490,6 +512,8 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 		cooling_potential = None
 		fan_rpm = None
 		noise_level = None
+		intel_lga = None
+		amd_am = None
 
 
 		# Depending on what category is active, sort the data to the respective variables
@@ -576,10 +600,12 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 			elif "/fi/Product/List/000-00N" in get_category:
 				part_type = "ram"
-
-				if any(s in desc.upper() for s in ["TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
-					if mem_type is None:
-						mem_type = desc
+				
+				if any(s in desc.upper() for s in ["TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") or type_text:
+					if type_text:
+						mem_type = type_text
+					elif mem_type is None:
+							mem_type = desc
 
 				elif any(s in desc.upper() for s in ["KAPASITEETTI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if amount is None:
@@ -700,7 +726,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 
 
-			elif "/fi/Product/List/000-104" in get_category:
+			elif "/fi/Product/List/000-104" in get_category and "/fi/Product/List/000-059" in get_type:
 				part_type = "cooler"
 
 				if "PROSESSORIJÄÄHDYTIN" in trimmed_name.upper():
@@ -710,23 +736,42 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					trimmed_name = trimmed_name.upper().replace("VAKIO PROSESSORIJÄÄHDYTIN", "").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
 					trimmed_name = "Intel stock cooler" + trimmed_name
 
-				if any(s in desc.upper() for s in ["YHTEENSOPIVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				if any(s in desc.upper() for s in ["YHTEENSOPIVUUS", "KANNAT", "COMPATIBILITY", "KANTA", "SOCKET"]) and ":" in desc.upper() and not desc.strip().endswith(":") or any(s in desc.upper() for s in ["INTEL", "AMD"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if desc.strip().startswith(":"):
+						desc = desc.replace(":", "", 1)
+					if any(s in desc.upper() for s in ["INTEL"]) and any(s in desc.upper() for s in ["11", "12", "20", "17", "13", "77", "LGA"]):
+						intel_lga = desc
+					elif any(s in desc.upper() for s in ["AMD"]) and any(s in desc.upper() for s in ["AM", "FM"]):
+						amd_am = desc
+					if intel_lga and amd_am:
+						compatibility = f"{intel_lga}; {amd_am}"
+					elif intel_lga and not amd_am:
+						compatibility = intel_lga
+					elif amd_am and not intel_lga:
+						compatibility = amd_am
+
 					if compatibility is None:
-						compatibility = desc
+						if any(s in desc.upper() for s in ["INTEL"]) and any(s in desc.upper() for s in ["AMD"]) and any(s in desc.upper() for s in ["11", "12", "20", "LGA"]) and any(s in desc.upper() for s in ["AM", "FM"]):
+							compatibility = desc
+						if any(s in desc.upper() for s in ["YHTEENSOPIVUUS", "KANNAT", "COMPATIBILITY", "KANTA", "SOCKET"]):	
+							compatibility = desc
 
 				if any(s in desc.upper() for s in ["TDP"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if cooling_potential is None:
-						cooling_potential = desc
+						if "KATSO VALMISTAJAN" in desc.upper():
+							cooling_potential = None
+						else:
+							cooling_potential = desc
 
-				if any(s in desc.upper() for s in ["NOPEUS", "RPM"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				if any(s in desc.upper() for s in ["NOPEUS", "RPM", "SPEED"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if fan_rpm is None:
 						fan_rpm = desc
 
-				if any(s in desc.upper() for s in ["MELU", "DBA"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				if any(s in desc.upper() for s in ["MELU", "DBA", "NOISE"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if noise_level is None:
 						noise_level = desc
 
-				if any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				if any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK", "DIMENSIONS", "KOKO", "K X L X S", "L X P X K"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
 						dimensions = desc
 
@@ -777,20 +822,24 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					item_list[5] = item_list[5].upper().replace("VÄHINTÄÄN", "").strip()
 					
 			if part_type == "mobo":
-				item_list[2] = final_trim(part_type, item_list, "mobo", 2, ",")
+				item_list[2] = final_trim(part_type, item_list, part_type, 2, ",")
 			elif part_type == "cpu":
-				item_list[0] = final_trim(part_type, item_list, "cpu", 0, "-YDIN")
-				item_list[0] = final_trim(part_type, item_list, "cpu", 0, "-YTIMINEN")
-				item_list[1] = final_trim(part_type, item_list, "cpu", 1, "SÄIETTÄ")
-				item_list[6] = final_trim(part_type, item_list, "cpu", 6, "(PROCESSOR BASE POWER)")
-				item_list[4] = final_trim(part_type, item_list, "cpu", 4, "SOCKET")
+				item_list[0] = final_trim(part_type, item_list, part_type, 0, "-YDIN")
+				item_list[0] = final_trim(part_type, item_list, part_type, 0, "-YTIMINEN")
+				item_list[1] = final_trim(part_type, item_list, part_type, 1, "SÄIETTÄ")
+				item_list[6] = final_trim(part_type, item_list, part_type, 6, "(PROCESSOR BASE POWER)")
+				item_list[4] = final_trim(part_type, item_list, part_type, 4, "SOCKET")
 			elif part_type == "gpu":
-				item_list[1] = final_trim(part_type, item_list, "gpu", 1, "JOPA")
-				item_list[1] = final_trim(part_type, item_list, "gpu", 1, "ENINTÄÄN")
-				item_list[3] = final_trim(part_type, item_list, "gpu", 3, "ENINTÄÄN")
-				item_list[0] = final_trim(part_type, item_list, "gpu", 0, "ENINTÄÄN")
-				item_list[0] = final_trim(part_type, item_list, "gpu", 0, "YKSIKKÖÄ")
-
+				item_list[1] = final_trim(part_type, item_list, part_type, 1, "JOPA")
+				item_list[1] = final_trim(part_type, item_list, part_type, 1, "ENINTÄÄN")
+				item_list[3] = final_trim(part_type, item_list, part_type, 3, "ENINTÄÄN")
+				item_list[0] = final_trim(part_type, item_list, part_type, 0, "ENINTÄÄN")
+				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YKSIKKÖÄ")
+			elif part_type == "cooler":
+				item_list[0] = final_trim(part_type, item_list, part_type, 0, ":SOPII")
+				item_list[0] = final_trim(part_type, item_list, part_type, 0, "SOPII")
+				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS:")
+				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS")
 	
 			# Create final dictionaries for all parts, ready for database insertion
 			if part_type == "storage":
