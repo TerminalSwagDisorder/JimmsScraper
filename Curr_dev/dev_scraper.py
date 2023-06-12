@@ -1,5 +1,5 @@
 # File name: dev_scraper.py
-# Auth: Benjamin Willför/TerminalSwagDisorder & Sami Wazni
+# Auth: Benjamin Willför/TerminalSwagDisorder, Sami Wazni & Alexander Willför
 # Desc: File currently in development containing code for a scraper for jimms.com
 
 import database
@@ -507,7 +507,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if capacity is None:
 						capacity = desc
 
-				elif any(s in desc.upper() for s in ["FORM FACTOR:", "M.2 TYYPPI", "MUOTO"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["FORM FACTOR:", "M.2 TYYPPI", "MUOTO", "YHTEENSOPIVA PAIKKA"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if form_factor is None:
 						form_factor = desc
 
@@ -526,7 +526,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if flash is None:
 						flash = desc
 
-				elif any(s in desc.upper() for s in ["TBW", "KÄYTTÖKESTÄVYYS", "TOTAL BYTES WRITTEN"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["TBW", "KÄYTTÖKESTÄVYYS", "TOTAL BYTES WRITTEN", "KESTOKYKY", "KESTÄVYYS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if tbw is None:
 						tbw = desc
 
