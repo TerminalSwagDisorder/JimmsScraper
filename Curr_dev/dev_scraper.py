@@ -178,6 +178,12 @@ def trim_list(item_list):
 	return item_list
 
 
+def final_trim(part_type, item_list, part_type_name, item_position, keyword):
+	if part_type == part_type_name and item_list[item_position] and item_list[item_position] != None:
+		item_list_trimmed = item_list[item_position].upper().replace(keyword, "").strip().capitalize()
+		
+		return item_list_trimmed
+
 def process_subpages(base_url, index_pages_dict, item):
 	# Create selenium instance
 	driver_path = "./chromedriver_win32/chromedriver.exe"
@@ -362,7 +368,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 									else:
 										ul_title = ul_title[-1]
 										break
-
+									
 								if ":" not in ul_title:
 									ul_title = ul_title + ":"
 							else:
@@ -401,7 +407,11 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 							newline_trim = tt_trim.splitlines()
 							if len(newline_trim) > 0 and newline_trim != "":
 								for final_item in newline_trim:
-										desc_list.append(final_item)
+									if ":N" in final_item.upper():
+										final_item = final_item.upper().replace(":N", "")
+									if "-" in final_item:
+										final_item = final_item.lstrip("-").strip()
+									desc_list.append(final_item)
 
 					desc_list = [x for x in desc_list if x != "" and x != ":"]
 					# Remove everything before the specs
@@ -421,6 +431,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 							if item.endswith(":"):
 								desc_list[i] = desc_list[i] + desc_list[i+1]
 								del desc_list[i+1]
+								
 					except IndexError as e:
 						print(f"Error: {e}")
 					except Exception as e:
@@ -489,7 +500,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				part_type = "storage"
 
 				if "SSD-LEVY" in trimmed_name.upper():
-					trimmed_name = trimmed_name.upper().strip("SSD-LEVY").strip().capitalize()
+					trimmed_name = trimmed_name.upper().replace("SSD-LEVY", "").strip().capitalize()
 				# Try this V	
 				#if any(s in desc.upper() for s in ["KAPASITEETTI", "MUISTIN KOKO"]) and ":" in desc and desc.index(":") > desc.upper().index("KAPASITEETTI") and not desc.strip().endswith(":"):
 				if any(s in desc.upper() for s in ["KAPASITEETTI", "MUISTIN KOKO"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
@@ -588,21 +599,27 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				part_type = "gpu"
 
 				if "NÄYTÖNOHJAIN" in trimmed_name.upper():
-					trimmed_name = trimmed_name.upper().strip("NÄYTÖNOHJAIN").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
+					trimmed_name = trimmed_name.upper().replace("NÄYTÖNOHJAIN", "").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
 
-				if any(s in desc.upper() for s in ["CUDA", "STREAM-PROSESSORIT", "CUDA CORET", "CUDA -CORET"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				if any(s in desc.upper() for s in ["CUDA", "STREAM-PROSESSORIT", "CORET", "XMX"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if cores is None:
 						cores = desc
 
-				elif any(s in desc.upper() for s in ["BOOST", "KELLOTAAJUUS"]) and "MHZ" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["BOOST", "KELLOTAAJUUS", "DEFAULT MODE"]) and any(s in desc.upper() for s in ["GHZ", "MHZ"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if clock is None:
 						clock = desc
 
-				elif any(s in desc.upper() for s in ["MÄÄRÄ", "KOKO", "MUISTI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["MUISTI"]) and ":" in desc.upper() and not desc.strip().endswith(":") or any(s in desc.upper() for s in ["KOKO", "MÄÄRÄ"]) and any(s in desc.upper() for s in ["GB", "DDR", "MB"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if memory is None:
-						memory = desc
+						if any(s in desc.upper() for s in ["KOKO", "MÄÄRÄ"]) and any(s in desc.upper() for s in ["GB", "DDR", "MB"]):
+							memory = desc
+						else:
+							memory = None
+							desc = desc
+						if any(s in desc.upper() for s in ["MUISTI"]):
+							memory = desc
 
-				elif any(s in desc.upper() for s in ["VÄYLÄ"]) and not "MUISTIVÄYLÄ" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["VÄYLÄ", "PCI EXPRESS KONFIG"]) and not "MUISTIVÄYLÄ" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if interface is None:
 						interface = desc
 
@@ -610,7 +627,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if dimensions is None:
 						dimensions = desc
 
-				elif any(s in desc.upper() for s in ["TDP", "VIRTALÄHTE"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["TDP", "VIRTALÄHTE", "TEHONKULUTUS", "VIRRANKULUTUS", "VIRRAN KULUTUS", "TEHON KULUTUS", "TBP"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if tdp is None:
 						tdp = desc
 
@@ -626,9 +643,15 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if thread_count is None:
 						thread_count = desc
 
-				elif any(s in desc.upper() for s in ["KELLOTAAJUUS", "BASE CLOCK", "BASE"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["KELLOTAAJUUS", "BASE CLOCK"]) and ":" in desc.upper() and not desc.strip().endswith(":") or any(s in desc.upper() for s in ["BASE"]) and any(s in desc.upper() for s in ["GHZ"]) and not any(s in desc.upper() for s in ["W", "BASE POWER", "TDP"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if base_clock is None:
-						base_clock = desc
+						if any(s in desc.upper() for s in ["BASE"]) and any(s in desc.upper() for s in ["GHZ"]) and not any(s in desc.upper() for s in ["W", "BASE POWER", "TDP"]):
+							base_clock = desc
+						else:
+							base_clock = None
+							desc = desc
+						if any(s in desc.upper() for s in ["KELLOTAAJUUS", "BASE CLOCK"]):
+							base_clock = desc
 
 				elif any(s in desc.upper() for s in ["VÄLIMUISTI", "L3"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if cpu_cache is None:
@@ -664,7 +687,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 				elif any(s in desc.upper() for s in ["MODULAARINEN", "MODULAR", "MODULAARISUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if modular is None:
-						if "TÄYSIN" in desc.upper():
+						if "TÄYSIN" in desc.upper() or "TÄYSI" in desc.upper():
 							modular = "Fully modular"
 						elif "SEMI" in desc.upper():
 							modular = "Semi modular"
@@ -681,10 +704,10 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				part_type = "cooler"
 
 				if "PROSESSORIJÄÄHDYTIN" in trimmed_name.upper():
-					trimmed_name = trimmed_name.upper().strip("PROSESSORIJÄÄHDYTIN").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
+					trimmed_name = trimmed_name.upper().replace("PROSESSORIJÄÄHDYTIN", "").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
 
 				elif "VAKIO PROSESSORIJÄÄHDYTIN" in trimmed_name.upper():
-					trimmed_name = trimmed_name.upper().strip("VAKIO PROSESSORIJÄÄHDYTIN").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
+					trimmed_name = trimmed_name.upper().replace("VAKIO PROSESSORIJÄÄHDYTIN", "").strip().rstrip("-").strip().lstrip("-").strip().capitalize()
 					trimmed_name = "Intel stock cooler" + trimmed_name
 
 				if any(s in desc.upper() for s in ["YHTEENSOPIVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
@@ -751,13 +774,24 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			# Final trimming
 			if part_type == "gpu" and item_list[5] and item_list[5] != None:
 				if "VÄHINTÄÄN" in item_list[5].upper():
-					item_list[5] = item_list[5].upper().strip("VÄHINTÄÄN")
+					item_list[5] = item_list[5].upper().replace("VÄHINTÄÄN", "").strip()
+					
+			if part_type == "mobo":
+				item_list[2] = final_trim(part_type, item_list, "mobo", 2, ",")
+			elif part_type == "cpu":
+				item_list[0] = final_trim(part_type, item_list, "cpu", 0, "-YDIN")
+				item_list[0] = final_trim(part_type, item_list, "cpu", 0, "-YTIMINEN")
+				item_list[1] = final_trim(part_type, item_list, "cpu", 1, "SÄIETTÄ")
+				item_list[6] = final_trim(part_type, item_list, "cpu", 6, "(PROCESSOR BASE POWER)")
+				item_list[4] = final_trim(part_type, item_list, "cpu", 4, "SOCKET")
+			elif part_type == "gpu":
+				item_list[1] = final_trim(part_type, item_list, "gpu", 1, "JOPA")
+				item_list[1] = final_trim(part_type, item_list, "gpu", 1, "ENINTÄÄN")
+				item_list[3] = final_trim(part_type, item_list, "gpu", 3, "ENINTÄÄN")
+				item_list[0] = final_trim(part_type, item_list, "gpu", 0, "ENINTÄÄN")
+				item_list[0] = final_trim(part_type, item_list, "gpu", 0, "YKSIKKÖÄ")
 
-			if part_type == "mobo" and item_list[2] and item_list[2] != None:
-				item_list[2] = item_list[2].strip(",")
-
-			if part_type == "cpu" and item_list[0] and item_list[0] != None:
-				item_list[0] = item_list[0].strip("-ydin")
+	
 			# Create final dictionaries for all parts, ready for database insertion
 			if part_type == "storage":
 				storage_dict = {
