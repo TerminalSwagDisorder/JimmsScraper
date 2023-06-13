@@ -29,7 +29,9 @@ def main():
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"	
-	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt"]
+	
+	component_url2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
@@ -467,6 +469,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 		#pprint(name_list)
 		#pprint(desc_list)
+		print(type_text)
 
 		# Use special searches in case of bad HTML formatting
 		if "/fi/Product/List/000-00H" in get_category:
@@ -514,6 +517,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 		noise_level = None
 		intel_lga = None
 		amd_am = None
+		trimmed_type = None
 
 
 		# Depending on what category is active, sort the data to the respective variables
@@ -525,15 +529,34 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 				if "SSD-LEVY" in trimmed_name.upper():
 					trimmed_name = trimmed_name.upper().replace("SSD-LEVY", "").strip().capitalize()
-				# Try this V	
-				#if any(s in desc.upper() for s in ["KAPASITEETTI", "MUISTIN KOKO"]) and ":" in desc and desc.index(":") > desc.upper().index("KAPASITEETTI") and not desc.strip().endswith(":"):
+				
 				if any(s in desc.upper() for s in ["KAPASITEETTI", "MUISTIN KOKO"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if capacity is None:
 						capacity = desc
 
 				elif any(s in desc.upper() for s in ["FORM FACTOR:", "M.2 TYYPPI", "MUOTO", "YHTEENSOPIVA PAIKKA"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
-					if form_factor is None:
+
+					if any(s in desc.upper() for s in ["FORM FACTOR:", "M.2 TYYPPI", "MUOTO", "YHTEENSOPIVA PAIKKA"]) and ":" in desc.upper() and not desc.strip().endswith(":") and "OMINAISUUDET" not in desc.upper() and form_factor is None:
 						form_factor = desc
+
+				elif form_factor is None:
+					if "SATA III -LEVYT" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SATA III -LEVYT", 'TEST 3.5"')
+					elif "SSD-LEVYT M.2" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SSD-LEVYT M.2", "TEST M.2")
+					elif 'SSD-LEVYT 2.5"' in type_text.upper():
+						trimmed_type = type_text.upper().replace('SSD-LEVYT 2.5"', 'TEST 2.5"')
+					elif "SSD-LEVYT MSATA" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SSD-LEVYT MSATA", "TEST mSATA")
+					elif "SSD-KORTIT PCI-E" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SSD-KORTIT PCI-E", "TEST PCI-E")
+					elif "SCSI -LEVYT" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SCSI -LEVYT", "TEST SCSI")
+
+					form_factor = trimmed_type
+
+							
+
 
 				elif any(s in desc.upper() for s in ["VÄYLÄ", "LIITÄNTÄ", "LIITÄNNÄT"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if interface is None:
@@ -601,7 +624,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			elif "/fi/Product/List/000-00N" in get_category:
 				part_type = "ram"
 				
-				if any(s in desc.upper() for s in ["TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") or type_text:
+				if any(s in desc.upper() for s in ["TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if type_text:
 						mem_type = type_text
 					elif mem_type is None:
@@ -840,6 +863,10 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "SOPII")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS:")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS")
+			#elif part_type == "storage":
+			#	item_list[0] = final_trim(part_type, item_list, part_type, 1, "FORM FACTOR:")
+			#	item_list[0] = final_trim(part_type, item_list, part_type, 0, "KAPASITEETTI:")
+				
 	
 			# Create final dictionaries for all parts, ready for database insertion
 			if part_type == "storage":
