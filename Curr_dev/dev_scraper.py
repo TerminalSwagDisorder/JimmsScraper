@@ -581,19 +581,19 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			elif "/fi/Product/List/000-00J" in get_category:
 				part_type = "case"
 
-				if any(s in desc.upper() for s in ["KOTELOTYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				if any(s in desc.upper() for s in ["KOTELOTYYPPI", "TYYPPI", "FORM FACTOR", "KOTELON TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not ("VIRTALÄHDE" in desc.upper()):
 					if case_type is None:
 						case_type = desc
-
-				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK", "DIMENSIONS", "(LXKXS)", "PITUUS", "KORKEUS", "PITUUS", "SYVYYS", "KOTELO", "LEVEYS", "TILAVUUS", "L X K X S"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+																							#"KORKEUS", "PITUUS", "SYVYYS", "LEVEYS"
+				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["PXLXK", "(PXLXK)", "KXLXS", "LXPXK", "L X K X S",  "KXPXL", "SXLXK", "(LXKXS)", "MITAT", "DIMENSIONS", "RUNKO", "ULOKKEINEEN",  "KOTELO", "TILAVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
 						dimensions = desc
 
-				elif any(s in desc.upper() for s in ["VÄRI", "MALLI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["VÄRI", "VÄRI(T)"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if color is None:
 						color = desc
 
-				elif any(s in desc.upper() for s in ["YHTEENSOPIVUUS", "EMOLEVY", "EMOLEVYT", "MOTHERBOARD TYPES", "MOTHERBOARDS TYPES", "SOPIVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["YHTEENSOPIVUUS", "EMOLEVY", "EMOLEVYT", "MOTHERBOARD TYPES", "MOTHERBOARDS TYPES", "SOPIVUUS", "PÄÄSIJAINEN"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if compatibility is None:
 						compatibility = desc
 
