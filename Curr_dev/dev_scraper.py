@@ -29,9 +29,7 @@ def main():
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"	
-	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt"]
-	
-	component_url2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
@@ -604,19 +602,19 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			elif "/fi/Product/List/000-00J" in get_category:
 				part_type = "case"
 
-				if any(s in desc.upper() for s in ["KOTELOTYYPPI", "TYYPPI", "FORM FACTOR", "KOTELON TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not ("VIRTALÄHDE" in desc.upper()):
+				if any(s in desc.upper() for s in ["KOTELOTYYPPI", "TYYPPI", "FORM FACTOR", "KOTELON TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not any(s in desc.upper() for s in ["VIRTALÄH", "MATERIA", "LEVYTUKI"]):
 					if case_type is None:
 						case_type = desc
-																							#"KORKEUS", "PITUUS", "SYVYYS", "LEVEYS"
-				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["PXLXK", "(PXLXK)", "KXLXS", "LXPXK", "L X K X S",  "KXPXL", "SXLXK", "(LXKXS)", "MITAT", "DIMENSIONS", "RUNKO", "ULOKKEINEEN",  "KOTELO", "TILAVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+																							#"KORKEUS", "PITUUS", "SYVYYS", "LEVEYS"									#"TILAVUUS" bugged, need to add negative checks againsta litres, and give priority to millimeter lines
+				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["LXWXH", "L X W X H", "PXLXK", "(PXLXK)", "KXLXS", "LXPXK", "L X K X S",  "KXPXL", "SXLXK", "(LXKXS)", "(KXLXS)", "MITAT", "DIMENSION", "RUNKO", "ULOKKEINEEN",  "KOTELO", "TILAVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not any(s in desc.upper() for s in ["LITRA", "MATERIA"]):
 					if dimensions is None:
 						dimensions = desc
 
-				elif any(s in desc.upper() for s in ["VÄRI", "VÄRI(T)"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["VÄRI", "VÄRI(T)", "COLOR", "COLOUR", "VIIMEISTELY"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if color is None:
 						color = desc
 
-				elif any(s in desc.upper() for s in ["YHTEENSOPIVUUS", "EMOLEVY", "EMOLEVYT", "MOTHERBOARD TYPES", "MOTHERBOARDS TYPES", "SOPIVUUS", "PÄÄSIJAINEN"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["YHTEENSOPIVUUS", "EMOLEVY", "EMOLEVYT", "MOTHERBOARD", "MOTHERBOARDS", "SOPIVUUS", "PÄÄSIJAINEN"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if compatibility is None:
 						compatibility = desc
 
