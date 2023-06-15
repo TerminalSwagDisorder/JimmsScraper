@@ -824,6 +824,13 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			elif part_type == "case":
 				if case_type is None:
 					case_type = "{type_text}"
+	
+			elif part_type == "psu":
+				if modular is None and get_type == "/fi/Product/List/000-188":
+					modular = "Modular"
+				elif modular is None and get_type == "/fi/Product/List/000-187":
+					modular = "False"
+					
 
 			# Create a dictionary with all of the chosen data
 			part_lists_dict = {
@@ -884,6 +891,8 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "SOPII")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS:")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS")
+				if item_list[0].strip().startswith(":"):
+					item_list[0] = final_trim(part_type, item_list, part_type, 0, ":")
 			elif part_type == "ram":
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, ",")
 			elif part_type == "storage":
