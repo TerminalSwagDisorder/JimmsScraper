@@ -53,7 +53,7 @@ class CPU(UniversalComponents):
 		Column("Core Count", TEXT),
 		Column("Thread Count", TEXT),
 		Column("Base Clock", TEXT),
-		Column("L3 Cache", TEXT),
+		Column("Cache", TEXT),
 		Column("Socket", TEXT),
 		Column("Cpu Cooler", TEXT),
 		Column("TDP", TEXT),
