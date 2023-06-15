@@ -6,6 +6,7 @@ import database
 import requests
 import time
 import threading
+import traceback
 from pathlib import Path
 from bs4 import BeautifulSoup
 from time import sleep as sleep
@@ -29,8 +30,9 @@ def main():
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"	
-
-	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	component_url = ["/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00H/komponentit--emolevyt"]
+	
+	component_url2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
@@ -367,11 +369,8 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			#desc_data = results_item.select_one(":contains('Tekniset tiedot')")
 			#if desc_data:
 			if results_item:
-				# Continue this
-				#trimmed_data_p = results_item.stripped_strings
 				trimmed_data_p = results_item.contents
-				
-				#print("trimmed_data_p", trimmed_data_p)
+
 				for sibling in trimmed_data_p:
 					if sibling is not None and sibling != "":
 
@@ -422,14 +421,12 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						else:
 							# If the item is not a ul item
 							sibling_trim = sibling.get_text("\n")
-							print("sibling_trim", sibling_trim)
 							tt_trim = sibling_trim.strip("\xa0-").strip()
 							newline_trim = tt_trim.splitlines()
 							if len(newline_trim) > 0 and newline_trim != "":
 								i = 0
-								for n, final_item in enumerate(newline_trim):
+								for final_item in newline_trim:
 									final_item = final_item.strip()
-									
 									if ":N" in final_item.upper():
 										final_item = final_item.upper().replace(":N", "")
 									if "\xa0-" in final_item or "\XA0-" in final_item:
@@ -441,32 +438,39 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 										elif ":" not in final_item:
 											final_item = final_item.replace("-", ":", 1).strip()
 									desc_list.append(final_item)
-									
-									# For use with stubborn motherboard pages
-									i += 1
-									if "TEKNISET TIEDOT" not in newline_trim[n].upper() or "TEKNISET TIEDOT" not in newline_trim[n-1].upper():
-										if newline_trim[n].endswith(":") or not ":" in newline_trim[n+1]:
-											#print("passed2")
-											if ":" not in newline_trim[n-1] and newline_trim[n] == ":" and i > 2:
-												print("passed3")
-												newline_trim[n] = newline_trim[n-1] + newline_trim[n]
-											else:
-												newline_trim[n] = newline_trim[n]
-
-											newline_trim[n] = newline_trim[n] + newline_trim[n+1] + ";"
-											#print("1", newline_trim[n])
-										#print("2", newline_trim[n])
-										desc_list.append(newline_trim[n])
 
 
-					desc_list = [x for x in desc_list if x != "" and x != ":"]
+					# Remove all empty items from desc_list
+					desc_list = [x for x in desc_list if x != ""]
+
+
 					# Remove everything before the specs
-					if "Tekniset tiedot:" in desc_list:
-						index = desc_list.index("Tekniset tiedot:")
-						desc_list = desc_list[index:]
-					elif "Tekniset tiedot" in desc_list:
-						index = desc_list.index("Tekniset tiedot")
-						desc_list = desc_list[index:]
+					if any("Tekniset tiedot:" in s or "Tekniset tiedot" in s for s in desc_list) or "Tekniset tiedot" in desc_list or "Tekniset tiedot:" in desc_list:
+						index = 0
+						if "Tekniset tiedot" in desc_list:
+							index = desc_list.index("Tekniset tiedot")
+
+						elif "Tekniset tiedot:" in desc_list:
+							index = desc_list.index("Tekniset tiedot:")
+							
+						if len(desc_list) > index + 2 and len(desc_list) > 5:
+							if desc_list[index + 1] == ":":
+								desc_list = desc_list[index + 2:]
+							elif desc_list[index + 1] != ":":
+								desc_list = desc_list[index + 1:]
+							else:
+								desc_list = desc_list[index:]
+
+
+					
+					# For pages with separate colons, combine the previous string and next string with the colon
+					for i, item in enumerate(desc_list):
+						if item == ":" and not desc_list[i-1].endswith(":"):
+							desc_list[i] = desc_list[i-1] + item
+							del desc_list[i-1]
+							
+					# Remove all remaining ":"		
+					desc_list = [x for x in desc_list if x != "" and x != ":"]
 
 					# Format items better
 					try:
@@ -481,23 +485,19 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					except IndexError as e:
 						print(f"Error: {e}")
 					except Exception as e:
-						print(f"Something went wrong: {e}")
+						traceback_str = traceback.format_exc()
+						print(f"Something went wrong: {e}\n{traceback_str}")
 				sleep(0.1)
 
 		except Exception as e:
-			print(f"Something went wrong: {e}")
+			traceback_str = traceback.format_exc()
+			print(f"Something went wrong: {e}\n{traceback_str}")
 			
 
-
 		#pprint(name_list)
-		pprint(desc_list)
+		#pprint(desc_list)
 		#print(type_text)
 
-		# Use special searches in case of bad HTML formatting
-		if "/fi/Product/List/000-00H" in get_category:
-			chipset_list = strong_search(results_item, "Piirisarja")
-			mobo_ff_list = strong_search(results_item, "Emolevyn tyyppi")
-			mobo_memory_list = strong_search(results_item, "Muisti")
 
 		# Initialize upcoming variables
 		capacity = None
@@ -590,7 +590,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if form_factor is None:
 						form_factor = desc
 						
-				elif any(s in desc.upper() for s in ["DIMM"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["DIMM", "MUISTI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if memory_compatibility is None:
 						memory_compatibility = desc
 
@@ -603,7 +603,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						case_type = desc
 
 																							#"KORKEUS", "PITUUS", "SYVYYS", "LEVEYS"									#"TILAVUUS" bugged, need to add negative checks againsta litres, and give priority to millimeter lines
-				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["LXWXH", "L X W X H", "PXLXK", "(PXLXK)", "KXLXS", "LXPXK", "L X K X S",  "KXPXL", "SXLXK", "(LXKXS)", "(KXLXS)", "MITAT", "DIMENSION", "RUNKO", "ULOKKEINEEN",  "KOTELO", "TILAVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not any(s in desc.upper() for s in ["LITRA", "MATERIA"]):
+				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["LXWXH", "L X W X H", "PXLXK", "(PXLXK)", "KXLXS", "LXPXK", "L X K X S",  "KXPXL", "SXLXK", "(LXKXS)", "(KXLXS)", "MITAT", "DIMENSION", "RUNKO", "ULOKKEINEEN", "TILAVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not any(s in desc.upper() for s in ["LITRA", "MATERIA"]):
 					if dimensions is None:
 						dimensions = desc
 
@@ -724,21 +724,23 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				if any(s in desc.upper() for s in ["ATX12V", "ATX 12 V"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if atx12v is None:
 						atx12v = "True"
+					else:
+						atx12v = "False"
 
-				elif any(s in desc.upper() for s in ["80 PLUS", "HYÖTYSUHDE"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["80 PLUS", "HYÖTYSUHDE", "TEHOKKUUS", "80PLUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if efficiency is None:
 						efficiency = desc
 
-				elif any(s in desc.upper() for s in ["MODULAARINEN", "MODULAR", "MODULAARISUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["MODULAR", "MODULAARI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if modular is None:
-						if "TÄYSIN" in desc.upper() or "TÄYSI" in desc.upper():
+						if "TÄYSIN" in desc.upper() or "TÄYSI" in desc.upper() or "FULL" in desc.upper():
 							modular = "Fully modular"
 						elif "SEMI" in desc.upper():
 							modular = "Semi modular"
 						else:
 							modular = desc
 
-				elif any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK", "PXLXK", "K X L X S", "L X P X K", "P X L X K"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
 						dimensions = desc
 
@@ -821,14 +823,6 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				mem_type = f"TEST {type_text}"
 			if amount is None and spec_text and any(s in spec_text.upper() for s in ["GB"]):
 				amount = f"TEST {spec_text}"
-				
-		elif part_type == "mobo":
-			if chipset_list is not None and chipset is None:
-				chipset = chipset_list
-			elif mobo_ff_list is not None and form_factor is None:
-				form_factor = mobo_ff_list
-			elif mobo_memory_list is not None and memory_compatibility is None:
-				memory_compatibility = mobo_memory_list
 
 		#print("test2")	
 		if part_type and part_type != "invalid":
@@ -872,6 +866,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					
 			if part_type == "mobo":
 				item_list[2] = final_trim(part_type, item_list, part_type, 2, ",")
+				item_list[0] = final_trim(part_type, item_list, part_type, 0, ":")
 			elif part_type == "cpu":
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "-YDIN")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "-YTIMINEN")
@@ -884,6 +879,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				item_list[3] = final_trim(part_type, item_list, part_type, 3, "ENINTÄÄN")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "ENINTÄÄN")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YKSIKKÖÄ")
+				item_list[1] = final_trim(part_type, item_list, part_type, 1, "GAMING MODE:")
 			elif part_type == "cooler":
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, ":SOPII")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "SOPII")
@@ -891,7 +887,6 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS")
 			elif part_type == "ram":
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, ",")
-				
 			elif part_type == "storage":
 				item_list[1] = final_trim(part_type, item_list, part_type, 1, "FORM FACTOR:")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "KAPASITEETTI:")
