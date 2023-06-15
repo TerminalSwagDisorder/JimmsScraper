@@ -30,9 +30,7 @@ def main():
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"	
-	component_url = ["/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00H/komponentit--emolevyt"]
-	
-	component_url2 = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
@@ -335,7 +333,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				print("Cannot get product spec link")
 
 
-			# Testing getting the data with metadata
+			# Getting some data with metadata
 			m_manufacturer = get_meta(item_soup, {"property": "product:brand"})
 			m_price = get_meta(item_soup, {"property": "product:price:amount"})
 			m_desc = get_meta(item_soup, {"property": "og:description"})
@@ -602,16 +600,15 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if case_type is None:
 						case_type = desc
 
-																							#"KORKEUS", "PITUUS", "SYVYYS", "LEVEYS"									#"TILAVUUS" bugged, need to add negative checks againsta litres, and give priority to millimeter lines
-				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["LXWXH", "L X W X H", "PXLXK", "(PXLXK)", "KXLXS", "LXPXK", "L X K X S",  "KXPXL", "SXLXK", "(LXKXS)", "(KXLXS)", "MITAT", "DIMENSION", "RUNKO", "ULOKKEINEEN", "TILAVUUS"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not any(s in desc.upper() for s in ["LITRA", "MATERIA"]):
+				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["LXWXH", "L X W X H", "PXLXK", "(PXLXK)", "KXLXS", "LXPXK", "L X K X S",  "KXPXL", "SXLXK", "(LXKXS)", "(KXLXS)", "MITAT", "DIMENSION", "ULOKKEINEEN"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not any(s in desc.upper() for s in ["LITRA", "MATERIA"]) or "KOTELO" in desc.upper() and "MM" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
 						dimensions = desc
 
-				elif any(s in desc.upper() for s in ["VÄRI", "VÄRI(T)", "COLOR", "COLOUR", "VIIMEISTELY"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["VÄRI", "VÄRI(T)", "COLOR", "COLOUR", "VIIMEISTELY"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not any(s in desc.upper() for s in ["RGB"]):
 					if color is None:
 						color = desc
 
-				elif any(s in desc.upper() for s in ["YHTEENSOPIVUUS", "EMOLEVY", "EMOLEVYT", "MOTHERBOARD", "MOTHERBOARDS", "SOPIVUUS", "PÄÄSIJAINEN"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["YHTEENSOPIVUUS", "ATX", "ITX", "EMOLEVYT", "MOTHERBOARD", "MOTHERBOARDS", "SOPIVUUS", "PÄÄSIJAINEN"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if compatibility is None:
 						compatibility = desc
 
@@ -724,8 +721,6 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				if any(s in desc.upper() for s in ["ATX12V", "ATX 12 V"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if atx12v is None:
 						atx12v = "True"
-					else:
-						atx12v = "False"
 
 				elif any(s in desc.upper() for s in ["80 PLUS", "HYÖTYSUHDE", "TEHOKKUUS", "80PLUS"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if efficiency is None:
@@ -740,7 +735,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						else:
 							modular = desc
 
-				elif any(s in desc.upper() for s in ["MITAT", "KXLXS", "LXPXK", "PXLXK", "K X L X S", "L X P X K", "P X L X K"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["KOKO", "MITAT", "KXLXS", "LXPXK", "PXLXK", "KXLXP", "LXKXS", "K X L X S", "L X P X K", "P X L X K", "K X L X P", "L X K X S"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
 						dimensions = desc
 
@@ -800,32 +795,36 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				print("Something went wrong. Category:", get_category)
 				break
 				
-		# Additional data for some cases for when no applicable data was found in the loop
-		if part_type == "storage":
-			if form_factor is None:
-				if "SATA III -LEVYT" in type_text.upper():
-					trimmed_type = type_text.upper().replace("SATA III -LEVYT", '3.5"')
-				elif "SSD-LEVYT M.2" in type_text.upper():
-					trimmed_type = type_text.upper().replace("SSD-LEVYT M.2", "M.2")
-				elif 'SSD-LEVYT 2.5"' in type_text.upper():
-					trimmed_type = type_text.upper().replace('SSD-LEVYT 2.5"', '2.5"')
-				elif "SSD-LEVYT MSATA" in type_text.upper():
-					trimmed_type = type_text.upper().replace("SSD-LEVYT MSATA", "mSATA")
-				elif "SSD-KORTIT PCI-E" in type_text.upper():
-					trimmed_type = type_text.upper().replace("SSD-KORTIT PCI-E", "PCI-E")
-				elif "SCSI -LEVYT" in type_text.upper():
-					trimmed_type = type_text.upper().replace("SCSI -LEVYT", "SCSI")
 
-				form_factor = trimmed_type
-				
-		elif part_type == "ram":
-			if mem_type is None:
-				mem_type = f"TEST {type_text}"
-			if amount is None and spec_text and any(s in spec_text.upper() for s in ["GB"]):
-				amount = f"TEST {spec_text}"
-
-		#print("test2")	
 		if part_type and part_type != "invalid":
+			# Additional data for some cases for when no applicable data was found in the loop
+			if part_type == "storage":
+				if form_factor is None:
+					if "SATA III -LEVYT" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SATA III -LEVYT", '3.5"')
+					elif "SSD-LEVYT M.2" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SSD-LEVYT M.2", "M.2")
+					elif 'SSD-LEVYT 2.5"' in type_text.upper():
+						trimmed_type = type_text.upper().replace('SSD-LEVYT 2.5"', '2.5"')
+					elif "SSD-LEVYT MSATA" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SSD-LEVYT MSATA", "mSATA")
+					elif "SSD-KORTIT PCI-E" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SSD-KORTIT PCI-E", "PCI-E")
+					elif "SCSI -LEVYT" in type_text.upper():
+						trimmed_type = type_text.upper().replace("SCSI -LEVYT", "SCSI")
+
+					form_factor = trimmed_type
+
+			elif part_type == "ram":
+				if mem_type is None:
+					mem_type = "{type_text}"
+				if amount is None and spec_text and any(s in spec_text.upper() for s in ["GB"]):
+					amount = "{spec_text}"
+			
+			elif part_type == "case":
+				if case_type is None:
+					case_type = "{type_text}"
+
 			# Create a dictionary with all of the chosen data
 			part_lists_dict = {
 				"storage_list": [capacity, form_factor, interface, cache, flash, tbw],
