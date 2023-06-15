@@ -27,6 +27,9 @@ def main():
 	# Timer for whole program
 	program_start = time.time()
 	
+	# License notice
+	print("This program uses the GNU General Public License (GPL) version 3")
+	
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"	
