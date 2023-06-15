@@ -31,7 +31,7 @@ def main():
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"	
 	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
-
+	
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
 	if not speed_passed:
@@ -484,12 +484,12 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						print(f"Error: {e}")
 					except Exception as e:
 						traceback_str = traceback.format_exc()
-						print(f"Something went wrong: {e}\n{traceback_str}")
+						print(f"Something went wrong: {e}")
 				sleep(0.1)
 
 		except Exception as e:
 			traceback_str = traceback.format_exc()
-			print(f"Something went wrong: {e}\n{traceback_str}")
+			print(f"Something went wrong: {e}")
 			
 
 		#pprint(name_list)
@@ -817,13 +817,13 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 			elif part_type == "ram":
 				if mem_type is None:
-					mem_type = "{type_text}"
+					mem_type = type_text
 				if amount is None and spec_text and any(s in spec_text.upper() for s in ["GB"]):
-					amount = "{spec_text}"
+					amount = spec_text
 			
 			elif part_type == "case":
 				if case_type is None:
-					case_type = "{type_text}"
+					case_type = type_text
 	
 			elif part_type == "psu":
 				if modular is None and get_type == "/fi/Product/List/000-188":
@@ -891,7 +891,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "SOPII")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS:")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS")
-				if item_list[0].strip().startswith(":"):
+				if item_list[0] is not None and item_list[0].strip().startswith(":"):
 					item_list[0] = final_trim(part_type, item_list, part_type, 0, ":")
 			elif part_type == "ram":
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, ",")
