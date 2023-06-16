@@ -28,8 +28,6 @@ def create_database():
 
 	return engine, session, metadata
 
-engine, session, metadata = create_database()
-
 Base = declarative_base()
 
 # Create tables in database	 
@@ -134,5 +132,3 @@ class Case(UniversalComponents):
 		Column("Compatibility", TEXT)
 
 	)
-
-Base.metadata.create_all(engine)
