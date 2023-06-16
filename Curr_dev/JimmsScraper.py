@@ -23,6 +23,7 @@ from sqlalchemy.sql import table, column, select, update, insert, delete, text
 from sqlalchemy import create_engine
 
 
+
 def main():
 	# Timer for whole program
 	program_start = time.time()
@@ -45,12 +46,12 @@ def main():
 		else:
 			print("Stopping...")
 			return
-
+		
 	engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case = database_connection()
 
 	index_pages_dict = get_subpages(base_url, component_url)
 	all_product_links = get_urls(base_url, index_pages_dict)
-	sleep(2)
+	sleep(0.5)
 	scraper_start = time.time()
 	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case)
 	session.close()
@@ -105,16 +106,21 @@ def speedtest(base_url):
 	return speed_passed
 
 def database_connection():
-	# Location of current directory
-	fPath = Path(__file__).resolve()
-	dPath = fPath.parent
-	finPath = dPath.joinpath("database")
-
-	# Create a connection to the database
-	engine = create_engine("sqlite:///" + str(finPath.joinpath("pcbuildwebsite_db.db")), echo=True, pool_pre_ping=True)
-	Session = sessionmaker(bind = engine)
-	session = Session()
-	metadata = MetaData()
+	# Create the tables
+	engine, session, metadata = database.create_database()
+	
+	UniversalComponents_conn = database.UniversalComponents()
+	CPU_conn = database.CPU()
+	GPU_conn = database.GPU()
+	Cooler_conn = database.Cooler()
+	Motherboard_conn = database.Motherboard()
+	Memory_conn = database.Memory()
+	Storage_conn = database.Storage()
+	PSU_conn = database.PSU()
+	Case_conn = database.Case()
+	
+	database.Base.metadata.create_all(engine)
+	
 
 	CPU = database.CPU.__table__
 
@@ -206,7 +212,7 @@ def process_subpages(base_url, index_pages_dict, item):
 		wait = WebDriverWait(driver, 10)
 		button = wait.until(EC.element_to_be_clickable((By.XPATH, "//a[@data-bind='click: moveToLastPage']")))
 		driver.execute_script("arguments[0].click();", button)
-		sleep(2)
+		sleep(1)
 
 		# Get the url
 		last_page_url = driver.current_url
@@ -225,7 +231,7 @@ def process_subpages(base_url, index_pages_dict, item):
 		# Create a list/dictionary with all subpages
 		index_pages_dict[item] = [parameter + str(page) for page in page_index]
 
-		sleep(2)
+		sleep(1)
 	except Exception as e:
 		print(f"Error while processing {item}: {e}")	
 	finally:
@@ -271,7 +277,7 @@ def process_url(curr_url, all_product_links, lock):
 				all_product_links.append(get_link)
 				lock.release()
 				
-				sleep(0.2)
+				sleep(0.1)
 			else:
 				print("Skipped reduced or bundled item")
 			
@@ -303,7 +309,7 @@ def get_urls(base_url, index_pages_dict):
 	url_end = time.time()
 	url_time = url_end - url_start
 	print(f"Url time: {url_time:.2f}\nFinal amount of valid links: {len(all_product_links)}\n")
-	sleep(2)
+	sleep(1)
 	return all_product_links
 
 
