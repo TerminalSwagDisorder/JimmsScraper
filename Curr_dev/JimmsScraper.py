@@ -363,13 +363,13 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			
 			# Get the image shown in the page first
 			product_image = item_soup.find(class_="product-gallery").find("img")
-				if product_image:
-					product_image = product_image.get("src")
-					print(f"Page image: {product_image}")
-					print(f"Meta image: {m_image}")
-				else:
-					product_image = m_image
-					print(f"No image found in the item page, using the metadata og image")
+			if product_image:
+				product_image = product_image.get("src")
+				print(f"Page image: {product_image}")
+				print(f"Meta image: {m_image}")
+			else:
+				product_image = m_image
+				print(f"No image found in the item page, using the metadata og image")
 
 			# Get the short description 
 			short_desc = item_soup.find(class_="jim-product-cta-box-shortdescription")
@@ -1081,7 +1081,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 
 			# Download product images
-			file_name = Path(f"{part_type.upper()}_{product_image.split("/")[-1]}").name
+			file_name = Path(f"{part_type.upper()}_{product_image.split('/')[-1]}").name
 			file_path = finPath.joinpath(file_name)
 
 			img_response = requests.get(product_image)
