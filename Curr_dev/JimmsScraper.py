@@ -143,10 +143,10 @@ def database_connection():
 
 
 def get_meta(item_soup, metasearch):
-		meta_location = item_soup.find("meta", metasearch)
-		metadata = meta_location["content"]
+	meta_location = item_soup.find("meta", metasearch)
+	metadata = meta_location["content"]
 
-		return metadata
+	return metadata
 
 def strong_search(results_item, strong_desc):
 	# Get strong item with string from description
@@ -346,6 +346,17 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			m_manufacturer = get_meta(item_soup, {"property": "product:brand"})
 			m_price = get_meta(item_soup, {"property": "product:price:amount"})
 			m_desc = get_meta(item_soup, {"property": "og:description"})
+			m_image = get_meta(item_soup, {"property": "og:image"})
+			
+			# Get the image shown in the page first
+			product_image = item_soup.find(class_="product-gallery").find("img")
+				if product_image:
+					product_image = product_image.get("src")
+					print(f"Page image: {product_image}")
+					print(f"Meta image: {m_image}")
+				else:
+					product_image = m_image
+					print(f"No image found in the item page, using the metadata og image")
 
 			# Get the short description 
 			short_desc = item_soup.find(class_="jim-product-cta-box-shortdescription")
@@ -916,6 +927,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Capacity": item_list[0],
 					"Form Factor": item_list[1],
 					"Interface": item_list[2],
@@ -934,6 +946,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Chipset": item_list[0],
 					"Form Factor": item_list[1],
 					"Memory Compatibility": item_list[2],
@@ -949,6 +962,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Case type": item_list[0],
 					"Dimensions": item_list[1],
 					"Color": item_list[2],
@@ -966,6 +980,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Type": item_list[0],
 					"Amount": item_list[1],
 					"Speed": item_list[2],
@@ -982,6 +997,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Cores": item_list[0],
 					"Core Clock": item_list[1],
 					"Memory": item_list[2],
@@ -1000,6 +1016,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Core Count": item_list[0],
 					"Thread Count": item_list[1],
 					"Base Clock": item_list[2],
@@ -1020,6 +1037,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Is ATX12V": item_list[0],
 					"Efficiency": item_list[1],
 					"Modular": item_list[2],
@@ -1036,6 +1054,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Compatibility": item_list[0],
 					"Cooling Potential": item_list[1],
 					"Fan RPM": item_list[2],
