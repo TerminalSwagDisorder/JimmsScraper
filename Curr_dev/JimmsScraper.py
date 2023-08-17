@@ -35,7 +35,9 @@ def main():
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"	
 	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
-	
+
+	finPath = create_image_folder()
+
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
 	if not speed_passed:
@@ -53,7 +55,7 @@ def main():
 	all_product_links = get_urls(base_url, index_pages_dict)
 	sleep(0.5)
 	scraper_start = time.time()
-	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case)
+	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case, finPath)
 	session.close()
 	
 	scraper_end = time.time()
@@ -65,6 +67,17 @@ def main():
 	program_end = time.time()
 	program_time = program_end - program_start
 	print(f"The program ran for {program_time:.2f} seconds!")
+	
+def create_image_folder():
+	# Create image folder if it does not exist
+	fPath = Path(__file__).resolve()
+	dPath = fPath.parent
+	finPath = dPath.joinpath("product_images")
+
+	if not finPath.exists():
+		finPath.mkdir()
+	
+	return finPath
 
 def check_download_speed(url):
 	# Get the values for the download speed
@@ -313,7 +326,7 @@ def get_urls(base_url, index_pages_dict):
 	return all_product_links
 
 
-def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case):
+def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case, finPath):
 	for product in all_product_links:
 		try:
 			desc_list = []
@@ -1065,6 +1078,19 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				i = insert(Cooler).values(cooler_dict)
 				session.execute(i)
 				session.commit()
+
+
+			# Download product images
+			file_name = Path(f"{part_type.upper()}_{product_image.split("/")[-1]}").name
+			file_path = finPath.joinpath(file_name)
+
+			img_response = requests.get(product_image)
+			if response.status_code == 200:
+				with open(file_path, "wb") as f:
+					f.write(img_response.content)
+			else:
+				print(f"Failed to download: {file_name}")
+
 
 			sleep(0.1)
 		else:
