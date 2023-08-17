@@ -15,6 +15,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import StaleElementReferenceException
 from pprint import pprint as pprint
 from sqlalchemy import *
@@ -211,6 +212,16 @@ def process_subpages(base_url, index_pages_dict, item):
 	# Create selenium instance
 	driver_path = "./chromedriver-win64/chromedriver.exe"
 	service = Service(driver_path)
+	
+	# In case there are SSL or similar errors hindering the code, use this
+	#options = webdriver.ChromeOptions()
+	#options.add_argument("--ignore-certificate-errors")
+	#options.add_argument("--ignore-ssl-errors")
+	#options.add_argument("--disable-proxy-certificate-handler")
+	#options.add_argument("--disable-content-security-policy")
+	#driver = webdriver.Chrome(service = service, chrome_options = options)
+	
+	
 	driver = webdriver.Chrome(service = service)
 	
 	# Get subpages for all components
@@ -370,6 +381,11 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			else:
 				product_image = m_image
 				print(f"No image found in the item page, using the metadata og image")
+				
+			if product_image.startswith("//") and not product_image.startswith("http"):
+				product_image = f"https:{product_image}"
+			elif not product_image.startswith("//") and not product_image.startswith("http"):
+				product_image = f"https://{product_image}"
 
 			# Get the short description 
 			short_desc = item_soup.find(class_="jim-product-cta-box-shortdescription")
@@ -1085,7 +1101,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			file_path = finPath.joinpath(file_name)
 
 			img_response = requests.get(product_image)
-			if response.status_code == 200:
+			if img_response.status_code == 200:
 				with open(file_path, "wb") as f:
 					f.write(img_response.content)
 			else:
