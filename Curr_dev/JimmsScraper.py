@@ -376,8 +376,6 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			product_image = item_soup.find(class_="product-gallery").find("img")
 			if product_image:
 				product_image = product_image.get("src")
-				print(f"Page image: {product_image}")
-				print(f"Meta image: {m_image}")
 			else:
 				product_image = m_image
 				print(f"No image found in the item page, using the metadata og image")
