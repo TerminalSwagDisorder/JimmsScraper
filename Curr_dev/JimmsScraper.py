@@ -209,7 +209,7 @@ def final_trim(part_type, item_list, part_type_name, item_position, keyword):
 
 def process_subpages(base_url, index_pages_dict, item):
 	# Create selenium instance
-	driver_path = "./chromedriver_win32/chromedriver.exe"
+	driver_path = "./chromedriver-win64/chromedriver.exe"
 	service = Service(driver_path)
 	driver = webdriver.Chrome(service = service)
 	
