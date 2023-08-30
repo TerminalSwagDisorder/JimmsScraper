@@ -1103,7 +1103,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Image": image_file,
 					"Image_Url": product_image,
 					"Compatibility": item_list[0],
-					"Cooling Potential": item_list[1],
+					"Cooling_Potential": item_list[1],
 					"Fan_RPM": item_list[2],
 					"Noise_Level": item_list[3],
 					"Dimensions": item_list[4],
