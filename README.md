@@ -16,7 +16,7 @@ The program might bug out in case of a low download speed (under 500kb/s), so pl
 # Installation & How to use
 Please run setup.py to install dependencies, or check requirements.txt in case you wish to manually install them.
 
-Current iteration uses Selenium, which uses chromedriver. Currently using chromedriver for Chrome version 114. In case of other version of chrome, download your version from here: https://chromedriver.chromium.org/downloads and replace the chromedriver_win32 folder with your versions folder.
+Current iteration uses Selenium, which uses chromedriver. Currently using chromedriver for Chrome version 116. In case of other version of chrome, download your version from here: https://googlechromelabs.github.io/chrome-for-testing/ and replace the chromedriver-win64 folder with your versions folder.
 
 The program is run by running the JimmsScraper.py file.
 

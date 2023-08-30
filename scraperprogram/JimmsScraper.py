@@ -15,6 +15,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import StaleElementReferenceException
 from pprint import pprint as pprint
 from sqlalchemy import *
@@ -35,7 +36,9 @@ def main():
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"	
 	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
-	
+
+	finPath = create_image_folder()
+
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
 	if not speed_passed:
@@ -53,7 +56,7 @@ def main():
 	all_product_links = get_urls(base_url, index_pages_dict)
 	sleep(0.5)
 	scraper_start = time.time()
-	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case)
+	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case, finPath)
 	session.close()
 	
 	scraper_end = time.time()
@@ -65,6 +68,17 @@ def main():
 	program_end = time.time()
 	program_time = program_end - program_start
 	print(f"The program ran for {program_time:.2f} seconds!")
+	
+def create_image_folder():
+	# Create image folder if it does not exist
+	fPath = Path(__file__).resolve()
+	dPath = fPath.parent
+	finPath = dPath.joinpath("product_images")
+
+	if not finPath.exists():
+		finPath.mkdir()
+	
+	return finPath
 
 def check_download_speed(url):
 	# Get the values for the download speed
@@ -143,10 +157,10 @@ def database_connection():
 
 
 def get_meta(item_soup, metasearch):
-		meta_location = item_soup.find("meta", metasearch)
-		metadata = meta_location["content"]
+	meta_location = item_soup.find("meta", metasearch)
+	metadata = meta_location["content"]
 
-		return metadata
+	return metadata
 
 def strong_search(results_item, strong_desc):
 	# Get strong item with string from description
@@ -196,8 +210,18 @@ def final_trim(part_type, item_list, part_type_name, item_position, keyword):
 
 def process_subpages(base_url, index_pages_dict, item):
 	# Create selenium instance
-	driver_path = "./chromedriver_win32/chromedriver.exe"
+	driver_path = "./chromedriver-win64/chromedriver.exe"
 	service = Service(driver_path)
+	
+	# In case there are SSL or similar errors hindering the code, use this
+	#options = webdriver.ChromeOptions()
+	#options.add_argument("--ignore-certificate-errors")
+	#options.add_argument("--ignore-ssl-errors")
+	#options.add_argument("--disable-proxy-certificate-handler")
+	#options.add_argument("--disable-content-security-policy")
+	#driver = webdriver.Chrome(service = service, chrome_options = options)
+	
+	
 	driver = webdriver.Chrome(service = service)
 	
 	# Get subpages for all components
@@ -313,7 +337,7 @@ def get_urls(base_url, index_pages_dict):
 	return all_product_links
 
 
-def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case):
+def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case, finPath):
 	for product in all_product_links:
 		try:
 			desc_list = []
@@ -346,6 +370,20 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			m_manufacturer = get_meta(item_soup, {"property": "product:brand"})
 			m_price = get_meta(item_soup, {"property": "product:price:amount"})
 			m_desc = get_meta(item_soup, {"property": "og:description"})
+			m_image = get_meta(item_soup, {"property": "og:image"})
+			
+			# Get the image shown in the page first
+			product_image = item_soup.find(class_="product-gallery").find("img")
+			if product_image:
+				product_image = product_image.get("src")
+			else:
+				product_image = m_image
+				print(f"No image found in the item page, using the metadata og image")
+				
+			if product_image.startswith("//") and not product_image.startswith("http"):
+				product_image = f"https:{product_image}"
+			elif not product_image.startswith("//") and not product_image.startswith("http"):
+				product_image = f"https://{product_image}"
 
 			# Get the short description 
 			short_desc = item_soup.find(class_="jim-product-cta-box-shortdescription")
@@ -916,6 +954,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Capacity": item_list[0],
 					"Form Factor": item_list[1],
 					"Interface": item_list[2],
@@ -934,6 +973,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Chipset": item_list[0],
 					"Form Factor": item_list[1],
 					"Memory Compatibility": item_list[2],
@@ -949,6 +989,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Case type": item_list[0],
 					"Dimensions": item_list[1],
 					"Color": item_list[2],
@@ -966,6 +1007,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Type": item_list[0],
 					"Amount": item_list[1],
 					"Speed": item_list[2],
@@ -982,6 +1024,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Cores": item_list[0],
 					"Core Clock": item_list[1],
 					"Memory": item_list[2],
@@ -1000,6 +1043,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Core Count": item_list[0],
 					"Thread Count": item_list[1],
 					"Base Clock": item_list[2],
@@ -1020,6 +1064,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Is ATX12V": item_list[0],
 					"Efficiency": item_list[1],
 					"Modular": item_list[2],
@@ -1036,6 +1081,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
+					"Image": product_image,
 					"Compatibility": item_list[0],
 					"Cooling Potential": item_list[1],
 					"Fan RPM": item_list[2],
@@ -1046,6 +1092,19 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				i = insert(Cooler).values(cooler_dict)
 				session.execute(i)
 				session.commit()
+
+
+			# Download product images
+			file_name = Path(f"{part_type.upper()}_{product_image.split('/')[-1]}").name
+			file_path = finPath.joinpath(file_name)
+
+			img_response = requests.get(product_image)
+			if img_response.status_code == 200:
+				with open(file_path, "wb") as f:
+					f.write(img_response.content)
+			else:
+				print(f"Failed to download: {file_name}")
+
 
 			sleep(0.1)
 		else:

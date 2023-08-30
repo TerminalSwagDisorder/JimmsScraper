@@ -38,6 +38,7 @@ class UniversalComponents(Base):
 	Price = Column("Price", TEXT)
 	Name = Column("Name", TEXT)
 	Manufacturer = Column("Manufacturer", TEXT)
+	Image = Column("Image", TEXT)
 
 	__tablename__ = "universal_components"
 	__mapper_args__ = {
