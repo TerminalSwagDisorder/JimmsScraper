@@ -73,7 +73,7 @@ class GPU(UniversalComponents):
 	)
 
 class Cooler(UniversalComponents):
-	__tablename__ = "cpu cooler"
+	__tablename__ = "cpu_cooler"
 
 	__table_args__ = (
 		Column("Compatibility", TEXT),
