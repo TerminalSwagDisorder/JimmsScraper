@@ -39,6 +39,7 @@ class UniversalComponents(Base):
 	Name = Column("Name", TEXT)
 	Manufacturer = Column("Manufacturer", TEXT)
 	Image = Column("Image", TEXT)
+	Image_Url = Column("Image_Url", TEXT)
 
 	__tablename__ = "universal_components"
 	__mapper_args__ = {
@@ -49,14 +50,14 @@ class UniversalComponents(Base):
 class CPU(UniversalComponents):
 	__tablename__ = "cpu"
 	__table_args__ = (
-		Column("Core Count", TEXT),
-		Column("Thread Count", TEXT),
-		Column("Base Clock", TEXT),
+		Column("Core_Count", TEXT),
+		Column("Thread_Count", TEXT),
+		Column("Base_Clock", TEXT),
 		Column("Cache", TEXT),
 		Column("Socket", TEXT),
-		Column("Cpu Cooler", TEXT),
+		Column("Cpu_Cooler", TEXT),
 		Column("TDP", TEXT),
-		Column("Integrated GPU", TEXT)
+		Column("Integrated_GPU", TEXT)
 	)
 
 class GPU(UniversalComponents):
@@ -64,7 +65,7 @@ class GPU(UniversalComponents):
 
 	__table_args__ = (
 		Column("Cores", TEXT),
-		Column("Core Clock", TEXT),
+		Column("Core_Clock", TEXT),
 		Column("Memory", TEXT),
 		Column("Interface", TEXT),
 		Column("Dimensions", TEXT),
@@ -72,13 +73,13 @@ class GPU(UniversalComponents):
 	)
 
 class Cooler(UniversalComponents):
-	__tablename__ = "cpu cooler"
+	__tablename__ = "cpu_cooler"
 
 	__table_args__ = (
 		Column("Compatibility", TEXT),
-		Column("Cooling Potential", TEXT),
-		Column("Fan RPM", TEXT),
-		Column("Noise Level", TEXT),
+		Column("Cooling_Potential", TEXT),
+		Column("Fan_RPM", TEXT),
+		Column("Noise_Level", TEXT),
 		Column("Dimensions", TEXT)
 	)
 
@@ -87,8 +88,8 @@ class Motherboard(UniversalComponents):
 
 	__table_args__ = (
 		Column("Chipset", TEXT),
-		Column("Form Factor", TEXT),
-		Column("Memory Compatibility", TEXT)
+		Column("Form_Factor", TEXT),
+		Column("Memory_Compatibility", TEXT)
 	)
 
 class Memory(UniversalComponents):
@@ -106,7 +107,7 @@ class Storage(UniversalComponents):
 
 	__table_args__ = (
 		Column("Capacity", TEXT),
-		Column("Form Factor", TEXT),
+		Column("Form_Factor", TEXT),
 		Column("Interface", TEXT),
 		Column("Cache", TEXT),
 		Column("Flash", TEXT),
@@ -117,17 +118,17 @@ class PSU(UniversalComponents):
 	__tablename__ = "psu"
 
 	__table_args__ = (
-		Column("Is ATX12V", TEXT),
+		Column("Is_ATX12V", TEXT),
 		Column("Efficiency", TEXT),
 		Column("Modular", TEXT),
 		Column("Dimensions", TEXT)
 	)
 
-class Case(UniversalComponents):
-	__tablename__ = "case"
+class Chassis(UniversalComponents):
+	__tablename__ = "chassis"
 
 	__table_args__ = (
-		Column("Case type", TEXT),
+		Column("Chassis_type", TEXT),
 		Column("Dimensions", TEXT),
 		Column("Color", TEXT),
 		Column("Compatibility", TEXT)

@@ -34,7 +34,7 @@ def main():
 	
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
-	product_url = "/fi/Product/Show/"	
+	product_url = "/fi/Product/Show/"
 	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 
 	finPath = create_image_folder()
@@ -50,13 +50,13 @@ def main():
 			print("Stopping...")
 			return
 		
-	engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case = database_connection()
+	engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis = database_connection()
 
 	index_pages_dict = get_subpages(base_url, component_url)
 	all_product_links = get_urls(base_url, index_pages_dict)
 	sleep(0.5)
 	scraper_start = time.time()
-	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case, finPath)
+	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis, finPath)
 	session.close()
 	
 	scraper_end = time.time()
@@ -131,7 +131,7 @@ def database_connection():
 	Memory_conn = database.Memory()
 	Storage_conn = database.Storage()
 	PSU_conn = database.PSU()
-	Case_conn = database.Case()
+	Chassis_conn = database.Chassis()
 	
 	database.Base.metadata.create_all(engine)
 	
@@ -150,9 +150,9 @@ def database_connection():
 
 	PSU = database.PSU.__table__
 
-	Case = database.Case.__table__
+	Chassis = database.Chassis.__table__
 
-	return engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case
+	return engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis
 
 
 
@@ -337,7 +337,7 @@ def get_urls(base_url, index_pages_dict):
 	return all_product_links
 
 
-def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Case, finPath):
+def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis, finPath):
 	for product in all_product_links:
 		try:
 			desc_list = []
@@ -554,7 +554,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 		chipset = None
 		form_factor = None
 		memory_compatibility = None
-		case_type = None
+		chassis_type = None
 		dimensions = None
 		color = None
 		compatibility = None
@@ -641,11 +641,11 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 
 			elif "/fi/Product/List/000-00J" in get_category:
-				part_type = "case"
+				part_type = "chassis"
 
 				if any(s in desc.upper() for s in ["KOTELOTYYPPI", "TYYPPI", "FORM FACTOR", "KOTELON TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not any(s in desc.upper() for s in ["VIRTALÄH", "MATERIA", "LEVYTUKI"]):
-					if case_type is None:
-						case_type = desc
+					if chassis_type is None:
+						chassis_type = desc
 
 				elif "MAKSIMIMITAT" not in desc.upper() and any(s in desc.upper() for s in ["LXWXH", "L X W X H", "PXLXK", "(PXLXK)", "KXLXS", "LXPXK", "L X K X S",  "KXPXL", "SXLXK", "(LXKXS)", "(KXLXS)", "MITAT", "DIMENSION", "ULOKKEINEEN"]) and ":" in desc.upper() and not desc.strip().endswith(":") and not any(s in desc.upper() for s in ["LITRA", "MATERIA"]) or "KOTELO" in desc.upper() and "MM" in desc.upper() and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if dimensions is None:
@@ -868,9 +868,9 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				if amount is None and spec_text and any(s in spec_text.upper() for s in ["GB"]):
 					amount = spec_text
 			
-			elif part_type == "case":
-				if case_type is None:
-					case_type = type_text
+			elif part_type == "chassis":
+				if chassis_type is None:
+					chassis_type = type_text
 	
 			elif part_type == "psu":
 				if modular is None and get_type == "/fi/Product/List/000-188":
@@ -883,7 +883,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			part_lists_dict = {
 				"storage_list": [capacity, form_factor, interface, cache, flash, tbw],
 				"mobo_list": [chipset, form_factor, memory_compatibility],
-				"case_list": [case_type, dimensions, color, compatibility],
+				"chassis_list": [chassis_type, dimensions, color, compatibility],
 				"ram_list": [mem_type, amount, speed, latency],
 				"gpu_list": [cores, clock, memory, interface, dimensions, tdp],
 				"cpu_list": [core_count, thread_count, base_clock, cpu_cache, socket, cpu_cooler, tdp, igpu],
@@ -896,8 +896,8 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				item_list = part_lists_dict["storage_list"]
 			elif part_type == "mobo":
 				item_list = part_lists_dict["mobo_list"]
-			elif part_type == "case":
-				item_list = part_lists_dict["case_list"]
+			elif part_type == "chassis":
+				item_list = part_lists_dict["chassis_list"]
 			elif part_type == "ram":
 				item_list = part_lists_dict["ram_list"]
 			elif part_type == "gpu":
@@ -945,8 +945,20 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			elif part_type == "storage":
 				item_list[1] = final_trim(part_type, item_list, part_type, 1, "FORM FACTOR:")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "KAPASITEETTI:")
-				
-	
+
+
+			# Download product images
+			image_file = Path(f"{part_type.upper()}_{product_image.split('/')[-1]}").name
+			file_path = finPath.joinpath(image_file)
+
+			img_response = requests.get(product_image)
+			if img_response.status_code == 200:
+				with open(file_path, "wb") as f:
+					f.write(img_response.content)
+			else:
+				print(f"Failed to download: {image_file}")
+
+
 			# Create final dictionaries for all parts, ready for database insertion
 			if part_type == "storage":
 				storage_dict = {
@@ -954,9 +966,10 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
-					"Image": product_image,
+					"Image": image_file,
+					"Image_Url": product_image,
 					"Capacity": item_list[0],
-					"Form Factor": item_list[1],
+					"Form_Factor": item_list[1],
 					"Interface": item_list[2],
 					"Cache": item_list[3],
 					"Flash": item_list[4],
@@ -973,31 +986,33 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
-					"Image": product_image,
+					"Image": image_file,
+					"Image_Url": product_image,
 					"Chipset": item_list[0],
-					"Form Factor": item_list[1],
-					"Memory Compatibility": item_list[2],
+					"Form_Factor": item_list[1],
+					"Memory_Compatibility": item_list[2],
 				}
 				pprint(mobo_dict)
 				i = insert(Motherboard).values(mobo_dict)
 				session.execute(i)
 				session.commit()
 
-			elif part_type == "case":
-				case_dict = {
+			elif part_type == "chassis":
+				chassis_dict = {
 					"Url": curr_link,
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
-					"Image": product_image,
-					"Case type": item_list[0],
+					"Image": image_file,
+					"Image_Url": product_image,
+					"Chassis_type": item_list[0],
 					"Dimensions": item_list[1],
 					"Color": item_list[2],
 					"Compatibility": item_list[3],
 
 				}
-				pprint(case_dict)
-				i = insert(Case).values(case_dict)
+				pprint(chassis_dict)
+				i = insert(Chassis).values(chassis_dict)
 				session.execute(i)
 				session.commit()
 
@@ -1007,7 +1022,8 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
-					"Image": product_image,
+					"Image": image_file,
+					"Image_Url": product_image,
 					"Type": item_list[0],
 					"Amount": item_list[1],
 					"Speed": item_list[2],
@@ -1024,9 +1040,10 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
-					"Image": product_image,
+					"Image": image_file,
+					"Image_Url": product_image,
 					"Cores": item_list[0],
-					"Core Clock": item_list[1],
+					"Core_Clock": item_list[1],
 					"Memory": item_list[2],
 					"Interface": item_list[3],
 					"Dimensions": item_list[4],
@@ -1043,15 +1060,16 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
-					"Image": product_image,
-					"Core Count": item_list[0],
-					"Thread Count": item_list[1],
-					"Base Clock": item_list[2],
+					"Image": image_file,
+					"Image_Url": product_image,
+					"Core_Count": item_list[0],
+					"Thread_Count": item_list[1],
+					"Base_Clock": item_list[2],
 					"Cache": item_list[3],
 					"Socket": item_list[4],
-					"Cpu Cooler": item_list[5],
+					"Cpu_Cooler": item_list[5],
 					"TDP": item_list[6],
-					"Integrated GPU": item_list[7],
+					"Integrated_GPU": item_list[7],
 				}
 				pprint(cpu_dict)
 				i = insert(CPU).values(cpu_dict)
@@ -1064,8 +1082,9 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
-					"Image": product_image,
-					"Is ATX12V": item_list[0],
+					"Image": image_file,
+					"Image_Url": product_image,
+					"Is_ATX12V": item_list[0],
 					"Efficiency": item_list[1],
 					"Modular": item_list[2],
 					"Dimensions": item_list[3],
@@ -1081,29 +1100,18 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Price": m_price,
 					"Name": trimmed_name,
 					"Manufacturer": m_manufacturer,
-					"Image": product_image,
+					"Image": image_file,
+					"Image_Url": product_image,
 					"Compatibility": item_list[0],
-					"Cooling Potential": item_list[1],
-					"Fan RPM": item_list[2],
-					"Noise Level": item_list[3],
+					"Cooling_Potential": item_list[1],
+					"Fan_RPM": item_list[2],
+					"Noise_Level": item_list[3],
 					"Dimensions": item_list[4],
 				}
 				pprint(cooler_dict)
 				i = insert(Cooler).values(cooler_dict)
 				session.execute(i)
 				session.commit()
-
-
-			# Download product images
-			file_name = Path(f"{part_type.upper()}_{product_image.split('/')[-1]}").name
-			file_path = finPath.joinpath(file_name)
-
-			img_response = requests.get(product_image)
-			if img_response.status_code == 200:
-				with open(file_path, "wb") as f:
-					f.write(img_response.content)
-			else:
-				print(f"Failed to download: {file_name}")
 
 
 			sleep(0.1)
