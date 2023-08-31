@@ -997,7 +997,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				session.execute(i)
 				session.commit()
 
-			elif part_type == "":
+			elif part_type == "chassis":
 				chassis_dict = {
 					"Url": curr_link,
 					"Price": m_price,
