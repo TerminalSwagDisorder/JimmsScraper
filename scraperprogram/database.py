@@ -128,7 +128,7 @@ class Chassis(UniversalComponents):
 	__tablename__ = "chassis"
 
 	__table_args__ = (
-		Column("Case_type", TEXT),
+		Column("Chassis_type", TEXT),
 		Column("Dimensions", TEXT),
 		Column("Color", TEXT),
 		Column("Compatibility", TEXT)
