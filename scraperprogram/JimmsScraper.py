@@ -945,6 +945,8 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			elif part_type == "storage":
 				item_list[1] = final_trim(part_type, item_list, part_type, 1, "FORM FACTOR:")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "KAPASITEETTI:")
+			elif part_tpye == "chassis":
+				item_list[1] = final_trim(part_type, item_list, part_type, 1, "PXLXK:")
 
 
 			# Download product images
