@@ -1,4 +1,5 @@
 # JimmsScraper Version 2 - Scrape products from jimms.fi
+>***Ver. 2.1***
 
 # License
 This program uses the GNU General Public License (GPL) version 3
