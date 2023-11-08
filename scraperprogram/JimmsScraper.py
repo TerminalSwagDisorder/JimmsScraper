@@ -95,6 +95,7 @@ def check_download_speed(url):
 		return None
 
 def speedtest(base_url):
+	# Do a speedtest to jimms
 	speed_list = []
 
 	# Minimum acceptable download speed
@@ -157,6 +158,7 @@ def database_connection():
 
 
 def get_meta(item_soup, metasearch):
+	# Get metadata data, usually most accurate
 	meta_location = item_soup.find("meta", metasearch)
 	metadata = meta_location["content"]
 
@@ -187,7 +189,7 @@ def trim_list(item_list):
 	for i, item in enumerate(item_list):
 		if item and item != None:
 			
-			# Trim each item by removing the colon and everything it
+			# Trim each item by removing the colon and everything in it
 			data = item.split(":", 1)
 			if len(data) > 1:
 				item_list[i] = data[1].strip().capitalize()
@@ -203,6 +205,7 @@ def trim_list(item_list):
 
 
 def final_trim(part_type, item_list, part_type_name, item_position, keyword):
+	# Final universal trimming
 	if part_type == part_type_name and item_list[item_position] and item_list[item_position] != None:
 		item_list_trimmed = item_list[item_position].upper().replace(keyword, "").strip().capitalize()
 		
@@ -263,6 +266,7 @@ def process_subpages(base_url, index_pages_dict, item):
 		driver.quit()
 
 def get_subpages(base_url, component_url):
+	# Get all of the component subpages, ie, cpu page 1, cpu page 2 etc
 	index_pages_dict = {}
 
 	threads = []
@@ -312,6 +316,7 @@ def process_url(curr_url, all_product_links, lock):
 
 
 def get_urls(base_url, index_pages_dict):
+	# Get the urls of all products from the subpages
 	url_start = time.time()
 	all_product_links = []
 
@@ -336,8 +341,23 @@ def get_urls(base_url, index_pages_dict):
 	sleep(1)
 	return all_product_links
 
+def get_image(part_type, product_image, finPath):
+	# Download product images
+	image_file = Path(f"{part_type.upper()}_{product_image.split('/')[-1]}").name
+	file_path = finPath.joinpath(image_file)
+
+	img_response = requests.get(product_image)
+	if img_response.status_code == 200:
+		with open(file_path, "wb") as f:
+			f.write(img_response.content)
+			return image_file
+	else:
+		print(f"Failed to download: {image_file}")
+		return None
+
 
 def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis, finPath):
+	# All of the data scraping in each product page
 	for product in all_product_links:
 		try:
 			desc_list = []
@@ -949,16 +969,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				item_list[1] = final_trim(part_type, item_list, part_type, 1, "PXLXK:")
 
 
-			# Download product images
-			image_file = Path(f"{part_type.upper()}_{product_image.split('/')[-1]}").name
-			file_path = finPath.joinpath(image_file)
-
-			img_response = requests.get(product_image)
-			if img_response.status_code == 200:
-				with open(file_path, "wb") as f:
-					f.write(img_response.content)
-			else:
-				print(f"Failed to download: {image_file}")
+			image_file = get_image(part_type, product_image, finPath)
 
 
 			# Create final dictionaries for all parts, ready for database insertion
