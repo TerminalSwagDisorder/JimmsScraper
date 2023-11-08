@@ -1,9 +1,3 @@
-temp.txt
-comp1.txt
-comp2.txt
-/test
 /__pycache__
 *.pyc
-Curr_dev/benjamin_and_sami_code.zip
-Curr_dev/scraping_cmd.txt
-Curr_dev/debug_databases
+/scraperprogram/chrome-win64
