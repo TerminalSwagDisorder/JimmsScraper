@@ -36,8 +36,9 @@ def main():
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"
 	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
-
-	finPath = create_image_folder()
+	
+	# Initialize directory path
+	dirPath = Path(__file__).resolve().parent
 
 	# Do a speedtest to jimms
 	speed_passed = speedtest(base_url)
@@ -50,13 +51,15 @@ def main():
 			print("Stopping...")
 			return
 		
+	imgDirPath = create_image_folder(dirPath)
+	
 	engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis = database_connection()
 
-	index_pages_dict = get_subpages(base_url, component_url)
+	index_pages_dict = get_subpages(dirPath, base_url, component_url)
 	all_product_links = get_urls(base_url, index_pages_dict)
 	sleep(0.5)
 	scraper_start = time.time()
-	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis, finPath)
+	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis, imgDirPath)
 	session.close()
 	
 	scraper_end = time.time()
@@ -69,16 +72,14 @@ def main():
 	program_time = program_end - program_start
 	print(f"The program ran for {program_time:.2f} seconds!")
 	
-def create_image_folder():
+def create_image_folder(dirPath):
 	# Create image folder if it does not exist
-	fPath = Path(__file__).resolve()
-	dPath = fPath.parent
-	finPath = dPath.joinpath("product_images")
+	imgDirPath = dirPath.joinpath("product_images")
 
-	if not finPath.exists():
-		finPath.mkdir()
+	if not imgDirPath.exists():
+		imgDirPath.mkdir()
 	
-	return finPath
+	return imgDirPath
 
 def check_download_speed(url):
 	# Get the values for the download speed
@@ -211,21 +212,31 @@ def final_trim(part_type, item_list, part_type_name, item_position, keyword):
 		
 		return item_list_trimmed
 
-def process_subpages(base_url, index_pages_dict, item):
+def process_subpages(dirPath, base_url, index_pages_dict, item):
 	# Create selenium instance
-	driver_path = "./chromedriver-win64/chromedriver.exe"
+	cDriverPath = dirPath.joinpath("chromedriver-win64")
+	chromeDirPath = dirPath.joinpath("chrome-win64")
+	chromeFilePath = chromeDirPath.joinpath("chrome.exe")
+	
+	driver_path = cDriverPath.joinpath("chromedriver.exe")
 	service = Service(driver_path)
 	
+	options = webdriver.ChromeOptions()
+	options.binary_location = str(chromeFilePath)
+	
+	
 	# In case there are SSL or similar errors hindering the code, use this
-	#options = webdriver.ChromeOptions()
 	#options.add_argument("--ignore-certificate-errors")
 	#options.add_argument("--ignore-ssl-errors")
 	#options.add_argument("--disable-proxy-certificate-handler")
 	#options.add_argument("--disable-content-security-policy")
-	#driver = webdriver.Chrome(service = service, chrome_options = options)
+	
+	driver = webdriver.Chrome(service = service, options = options)
+	
+	# In case you do not want to use chrome options
+	#driver = webdriver.Chrome(service = service)
 	
 	
-	driver = webdriver.Chrome(service = service)
 	
 	# Get subpages for all components
 	try: 
@@ -265,7 +276,7 @@ def process_subpages(base_url, index_pages_dict, item):
 		driver.close()
 		driver.quit()
 
-def get_subpages(base_url, component_url):
+def get_subpages(dirPath, base_url, component_url):
 	# Get all of the component subpages, ie, cpu page 1, cpu page 2 etc
 	index_pages_dict = {}
 
@@ -273,7 +284,7 @@ def get_subpages(base_url, component_url):
 
 	for item in component_url:
 		# Speed the process up
-		thread = threading.Thread(target=process_subpages, args=(base_url, index_pages_dict, item))
+		thread = threading.Thread(target=process_subpages, args=(dirPath, base_url, index_pages_dict, item))
 		thread.start()
 		threads.append(thread)
 
@@ -341,10 +352,10 @@ def get_urls(base_url, index_pages_dict):
 	sleep(1)
 	return all_product_links
 
-def get_image(part_type, product_image, finPath):
+def get_image(part_type, product_image, imgDirPath):
 	# Download product images
 	image_file = Path(f"{part_type.upper()}_{product_image.split('/')[-1]}").name
-	file_path = finPath.joinpath(image_file)
+	file_path = imgDirPath.joinpath(image_file)
 
 	img_response = requests.get(product_image)
 	if img_response.status_code == 200:
@@ -356,7 +367,7 @@ def get_image(part_type, product_image, finPath):
 		return None
 
 
-def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis, finPath):
+def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis, imgDirPath):
 	# All of the data scraping in each product page
 	for product in all_product_links:
 		try:
@@ -965,11 +976,11 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			elif part_type == "storage":
 				item_list[1] = final_trim(part_type, item_list, part_type, 1, "FORM FACTOR:")
 				item_list[0] = final_trim(part_type, item_list, part_type, 0, "KAPASITEETTI:")
-			elif part_tpye == "chassis":
+			elif part_type == "chassis":
 				item_list[1] = final_trim(part_type, item_list, part_type, 1, "PXLXK:")
 
 
-			image_file = get_image(part_type, product_image, finPath)
+			image_file = get_image(part_type, product_image, imgDirPath)
 
 
 			# Create final dictionaries for all parts, ready for database insertion
