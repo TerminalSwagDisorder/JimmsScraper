@@ -57,7 +57,7 @@ def main():
 
 	index_pages_dict = get_subpages(dirPath, base_url, component_url)
 	all_product_links = get_urls(base_url, index_pages_dict)
-	sleep(0.5)
+	sleep(0.25)
 	scraper_start = time.time()
 	data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GPU, Cooler, Motherboard, Memory, Storage, PSU, Chassis, imgDirPath)
 	session.close()
@@ -269,7 +269,6 @@ def process_subpages(dirPath, base_url, index_pages_dict, item):
 		# Create a list/dictionary with all subpages
 		index_pages_dict[item] = [parameter + str(page) for page in page_index]
 
-		sleep(1)
 	except Exception as e:
 		print(f"Error while processing {item}: {e}")	
 	finally:
@@ -349,7 +348,7 @@ def get_urls(base_url, index_pages_dict):
 	url_end = time.time()
 	url_time = url_end - url_start
 	print(f"Url time: {url_time:.2f}\nFinal amount of valid links: {len(all_product_links)}\n")
-	sleep(1)
+	sleep(0.1)
 	return all_product_links
 
 def get_image(part_type, product_image, imgDirPath):
