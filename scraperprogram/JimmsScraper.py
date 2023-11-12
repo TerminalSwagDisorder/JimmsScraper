@@ -205,9 +205,9 @@ def trim_list(item_list):
 	return item_list
 
 
-def final_trim(part_type, item_list, part_type_name, item_position, keyword):
+def final_trim(part_type, item_list, item_position, keyword):
 	# Final universal trimming
-	if part_type == part_type_name and item_list[item_position] and item_list[item_position] != None:
+	if part_type and item_list[item_position] and item_list[item_position] != None:
 		item_list_trimmed = item_list[item_position].upper().replace(keyword, "").strip().capitalize()
 		
 		return item_list_trimmed
@@ -948,35 +948,35 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					item_list[5] = item_list[5].upper().replace("VÄHINTÄÄN", "").strip()
 					
 			if part_type == "mobo":
-				item_list[2] = final_trim(part_type, item_list, part_type, 2, ",")
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, ":")
+				item_list[2] = final_trim(part_type, item_list, 2, ",")
+				item_list[0] = final_trim(part_type, item_list, 0, ":")
 			elif part_type == "cpu":
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, "-YDIN")
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, "-YTIMINEN")
-				item_list[1] = final_trim(part_type, item_list, part_type, 1, "SÄIETTÄ")
-				item_list[6] = final_trim(part_type, item_list, part_type, 6, "(PROCESSOR BASE POWER)")
-				item_list[4] = final_trim(part_type, item_list, part_type, 4, "SOCKET")
+				item_list[0] = final_trim(part_type, item_list, 0, "-YDIN")
+				item_list[0] = final_trim(part_type, item_list, 0, "-YTIMINEN")
+				item_list[1] = final_trim(part_type, item_list, 1, "SÄIETTÄ")
+				item_list[6] = final_trim(part_type, item_list, 6, "(PROCESSOR BASE POWER)")
+				item_list[4] = final_trim(part_type, item_list, 4, "SOCKET")
 			elif part_type == "gpu":
-				item_list[1] = final_trim(part_type, item_list, part_type, 1, "JOPA")
-				item_list[1] = final_trim(part_type, item_list, part_type, 1, "ENINTÄÄN")
-				item_list[3] = final_trim(part_type, item_list, part_type, 3, "ENINTÄÄN")
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, "ENINTÄÄN")
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YKSIKKÖÄ")
-				item_list[1] = final_trim(part_type, item_list, part_type, 1, "GAMING MODE:")
+				item_list[1] = final_trim(part_type, item_list, 1, "JOPA")
+				item_list[1] = final_trim(part_type, item_list, 1, "ENINTÄÄN")
+				item_list[3] = final_trim(part_type, item_list, 3, "ENINTÄÄN")
+				item_list[0] = final_trim(part_type, item_list, 0, "ENINTÄÄN")
+				item_list[0] = final_trim(part_type, item_list, 0, "YKSIKKÖÄ")
+				item_list[1] = final_trim(part_type, item_list, 1, "GAMING MODE:")
 			elif part_type == "cooler":
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, ":SOPII")
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, "SOPII")
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS:")
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, "YHTEENSOPIVUUS")
+				item_list[0] = final_trim(part_type, item_list, 0, ":SOPII")
+				item_list[0] = final_trim(part_type, item_list, 0, "SOPII")
+				item_list[0] = final_trim(part_type, item_list, 0, "YHTEENSOPIVUUS:")
+				item_list[0] = final_trim(part_type, item_list, 0, "YHTEENSOPIVUUS")
 				if item_list[0] is not None and item_list[0].strip().startswith(":"):
-					item_list[0] = final_trim(part_type, item_list, part_type, 0, ":")
+					item_list[0] = final_trim(part_type, item_list, 0, ":")
 			elif part_type == "ram":
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, ",")
+				item_list[0] = final_trim(part_type, item_list, 0, ",")
 			elif part_type == "storage":
-				item_list[1] = final_trim(part_type, item_list, part_type, 1, "FORM FACTOR:")
-				item_list[0] = final_trim(part_type, item_list, part_type, 0, "KAPASITEETTI:")
+				item_list[1] = final_trim(part_type, item_list, 1, "FORM FACTOR:")
+				item_list[0] = final_trim(part_type, item_list, 0, "KAPASITEETTI:")
 			elif part_type == "chassis":
-				item_list[1] = final_trim(part_type, item_list, part_type, 1, "PXLXK:")
+				item_list[1] = final_trim(part_type, item_list, 1, "PXLXK:")
 
 
 			image_file = get_image(part_type, product_image, imgDirPath)
