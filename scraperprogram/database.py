@@ -134,3 +134,6 @@ class Chassis(UniversalComponents):
 		Column("Compatibility", TEXT)
 
 	)
+
+if __name__ == "__main__":
+	main()
