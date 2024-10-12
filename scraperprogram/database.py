@@ -88,6 +88,7 @@ class Motherboard(UniversalComponents):
 
 	__table_args__ = (
 		Column("Chipset", TEXT),
+		Column("Cpu_Compatibility", TEXT),
 		Column("Form_Factor", TEXT),
 		Column("Memory_Compatibility", TEXT)
 	)

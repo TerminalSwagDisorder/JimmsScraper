@@ -307,7 +307,7 @@ def process_url(curr_url, all_product_links, lock):
 		
 		# Get the actual link for each item
 		for item in product_name:
-			if "Tarjous" not in item.text and "Bundle" not in item.text and "Outlet" not in item.text:
+			if "TARJOUS" not in item.text.upper() and "BUNDLE" not in item.text.upper() and "OUTLET" not in item.text.upper():
 				lock.acquire()
 				product_link = item.find("a", href=True)
 				get_link = product_link.get("href")
@@ -588,6 +588,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 		dimensions = None
 		color = None
 		compatibility = None
+		cpu_compatibility = None
 		mem_type = None
 		amount = None
 		speed = None
@@ -661,11 +662,15 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					if chipset is None:
 						chipset = desc
 						
+				elif any(s in desc.upper() for s in ["PROSESSORITUKI", "PROSESSORI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+					if cpu_compatibility is None:
+						cpu_compatibility = desc		
+				
 				elif any(s in desc.upper() for s in ["TUOTTEEN TYYPPI", "EMOLEVYN TYYPPI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if form_factor is None:
 						form_factor = desc
 						
-				elif any(s in desc.upper() for s in ["DIMM", "MUISTI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
+				elif any(s in desc.upper() for s in ["DIMM", "MUISTI", "MUISTITUKI"]) and ":" in desc.upper() and not desc.strip().endswith(":"):
 					if memory_compatibility is None:
 						memory_compatibility = desc
 
@@ -912,7 +917,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 			# Create a dictionary with all of the chosen data
 			part_lists_dict = {
 				"storage_list": [capacity, form_factor, interface, cache, flash, tbw],
-				"mobo_list": [chipset, form_factor, memory_compatibility],
+				"mobo_list": [chipset, cpu_compatibility, form_factor, memory_compatibility],
 				"chassis_list": [chassis_type, dimensions, color, compatibility],
 				"ram_list": [mem_type, amount, speed, latency],
 				"gpu_list": [cores, clock, memory, interface, dimensions, tdp],
@@ -1012,8 +1017,9 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Image": image_file,
 					"Image_Url": product_image,
 					"Chipset": item_list[0],
-					"Form_Factor": item_list[1],
-					"Memory_Compatibility": item_list[2],
+					"Cpu_Compatibility": item_list[1],
+					"Form_Factor": item_list[2],
+					"Memory_Compatibility": item_list[3],
 				}
 				pprint(mobo_dict)
 				i = insert(Motherboard).values(mobo_dict)
