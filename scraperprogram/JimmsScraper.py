@@ -35,7 +35,8 @@ def main():
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"
-	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	component_url = ["/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00P/komponentit--naytonohjaimet"]
+	#component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 	
 	# Initialize directory path
 	dirPath = Path(__file__).resolve().parent
@@ -489,8 +490,9 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 									ul_title = ul_title.rstrip(":").rstrip()
 									index = desc_list.index(ul_title)
 									del desc_list[index]
-								except:
-									print("Something went wrong")
+								except Exception as e:
+									traceback_str = traceback.format_exc()
+									print(f"Something went wrong: {traceback_str}")
 
 
 						else:
@@ -520,7 +522,10 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 
 					# Remove everything before the specs
-					if any("Tekniset tiedot:" in s or "Tekniset tiedot" in s for s in desc_list) or "Tekniset tiedot" in desc_list or "Tekniset tiedot:" in desc_list:
+					#if any("Tekniset tiedot:" in s or "Tekniset tiedot" in s for s in desc_list) or "Tekniset tiedot" in desc_list or "Tekniset tiedot:" in desc_list:
+					#if any(s in (i.upper() for i in desc_list) for s in ["TEKNISET TIEDOT:", "TEKNISET TIEDOT"]):
+					#if any(s in [i.upper() for i in desc_list] for s in ["TEKNISET TIEDOT:", "TEKNISET TIEDOT"]):
+					if any(s.upper() in x.upper() for x in desc_list for s in ["TEKNISET TIEDOT:", "TEKNISET TIEDOT"]):
 						index = 0
 						if "Tekniset tiedot" in desc_list:
 							index = desc_list.index("Tekniset tiedot")
@@ -545,11 +550,15 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 							del desc_list[i-1]
 							
 					# Remove all remaining ":" and Tekniset tiedot	
-					desc_list = [x for x in desc_list if x != "" and x != ":" and x != "Tekniset tiedot" and x != "Tekniset tiedot:"]
+					#desc_list = [x for x in desc_list if x != "" and x != ":" and x != "Tekniset tiedot" and x != "Tekniset tiedot:"]
+					desc_list = [x for x in desc_list if x != "" and x != ":"]
 
 					# Format items better
 					try:
 						for i, item in enumerate(desc_list):
+							if "TEKNISET TIEDOT" in desc_list[i].upper():
+								continue
+								#del desc_list[i]
 							if i != 0 and item.startswith(":"):
 								desc_list[i] = desc_list[i-1] + desc_list[i]
 								del desc_list[i-1]
@@ -1034,7 +1043,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Form_Factor": item_list[2],
 					"Memory_Compatibility": item_list[3],
 				}
-				pprint(mobo_dict)
+				#pprint(mobo_dict)
 				i = insert(Motherboard).values(mobo_dict)
 				session.execute(i)
 				session.commit()
@@ -1091,7 +1100,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Dimensions": item_list[4],
 					"TDP": item_list[5],
 				}
-				pprint(gpu_dict)
+				#pprint(gpu_dict)
 				i = insert(GPU).values(gpu_dict)
 				session.execute(i)
 				session.commit()
