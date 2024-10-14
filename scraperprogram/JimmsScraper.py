@@ -35,8 +35,7 @@ def main():
 	# Urls for jimms
 	base_url = "https://www.jimms.fi"
 	product_url = "/fi/Product/Show/"
-	component_url = ["/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00P/komponentit--naytonohjaimet"]
-	#component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
+	component_url = ["/fi/Product/List/000-00K/komponentit--kiintolevyt-ssd-levyt", "/fi/Product/List/000-00H/komponentit--emolevyt", "/fi/Product/List/000-00J/komponentit--kotelot", "/fi/Product/List/000-00N/komponentit--muistit", "/fi/Product/List/000-00P/komponentit--naytonohjaimet", "/fi/Product/List/000-00R/komponentit--prosessorit", "/fi/Product/List/000-00U/komponentit--virtalahteet", "/fi/Product/List/000-104/jaahdytys-ja-erikoistuotteet--jaahdytyssiilit"]
 	
 	# Initialize directory path
 	dirPath = Path(__file__).resolve().parent
@@ -522,9 +521,6 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 
 					# Remove everything before the specs
-					#if any("Tekniset tiedot:" in s or "Tekniset tiedot" in s for s in desc_list) or "Tekniset tiedot" in desc_list or "Tekniset tiedot:" in desc_list:
-					#if any(s in (i.upper() for i in desc_list) for s in ["TEKNISET TIEDOT:", "TEKNISET TIEDOT"]):
-					#if any(s in [i.upper() for i in desc_list] for s in ["TEKNISET TIEDOT:", "TEKNISET TIEDOT"]):
 					if any(s.upper() in x.upper() for x in desc_list for s in ["TEKNISET TIEDOT:", "TEKNISET TIEDOT"]):
 						index = 0
 						if "Tekniset tiedot" in desc_list:
@@ -558,7 +554,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 						for i, item in enumerate(desc_list):
 							if "TEKNISET TIEDOT" in desc_list[i].upper():
 								continue
-								#del desc_list[i]
+
 							if i != 0 and item.startswith(":"):
 								desc_list[i] = desc_list[i-1] + desc_list[i]
 								del desc_list[i-1]
@@ -975,6 +971,9 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 				item_list[0] = final_trim(part_type, item_list, 0, ":")
 				item_list[1] = final_trim(part_type, item_list, 1, "AMD")
 				item_list[1] = final_trim(part_type, item_list, 1, "INTEL")
+				item_list[1] = final_trim(part_type, item_list, 1, "-KANTA")
+				item_list[1] = final_trim(part_type, item_list, 1, "KANTA")
+				item_list[1] = final_trim(part_type, item_list, 1, "SOCKET")
 				item_list[3] = final_trim(part_type, item_list, 3, "MUISTIARKITEKTUURI")
 				item_list[3] = final_trim(part_type, item_list, 3, "-")
 			elif part_type == "cpu":
@@ -1043,7 +1042,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Form_Factor": item_list[2],
 					"Memory_Compatibility": item_list[3],
 				}
-				#pprint(mobo_dict)
+				pprint(mobo_dict)
 				i = insert(Motherboard).values(mobo_dict)
 				session.execute(i)
 				session.commit()
@@ -1100,7 +1099,7 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					"Dimensions": item_list[4],
 					"TDP": item_list[5],
 				}
-				#pprint(gpu_dict)
+				pprint(gpu_dict)
 				i = insert(GPU).values(gpu_dict)
 				session.execute(i)
 				session.commit()
