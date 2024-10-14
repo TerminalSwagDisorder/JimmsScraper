@@ -544,29 +544,38 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 							desc_list[i] = desc_list[i-1] + item
 							del desc_list[i-1]
 							
-					# Remove all remaining ":"		
-					desc_list = [x for x in desc_list if x != "" and x != ":"]
+					# Remove all remaining ":" and Tekniset tiedot	
+					desc_list = [x for x in desc_list if x != "" and x != ":" and x != "Tekniset tiedot" and x != "Tekniset tiedot:"]
 
 					# Format items better
 					try:
 						for i, item in enumerate(desc_list):
-							if item.startswith(":"):
+							if i != 0 and item.startswith(":"):
 								desc_list[i] = desc_list[i-1] + desc_list[i]
 								del desc_list[i-1]
-							if item.endswith(":"):
+
+							elif i+1 < len(desc_list) and item.endswith(":"):
+								desc_list[i] = desc_list[i] + desc_list[i+1]
+								del desc_list[i+1]
+
+							if i+1 < len(desc_list) and "PROSESSORITUKI" in desc_list[i].upper() and ":" not in desc_list[i+1] and not any(s in desc_list[i+1].upper() for s in ["TUKEE", "SERIES", "SARJA", "SARJAN", "SUKUPOLVEN"]):
+								if any(s in desc_list[i].upper() for s in ["TUKEE", "SERIES", "SARJA", "SARJAN", "SUKUPOLVEN"]):
+									desc_list[i] = desc_list[i].split(":", 1)[0] + ":"
+
 								desc_list[i] = desc_list[i] + desc_list[i+1]
 								del desc_list[i+1]
 								
 					except IndexError as e:
-						print(f"Error: {e}")
+						traceback_str = traceback.format_exc()
+						print(f"Error: {traceback_str}")
 					except Exception as e:
 						traceback_str = traceback.format_exc()
-						print(f"Something went wrong: {e}")
+						print(f"Something went wrong: {traceback_str}")
 				sleep(0.1)
 
 		except Exception as e:
 			traceback_str = traceback.format_exc()
-			print(f"Something went wrong: {e}")
+			print(f"Something went wrong: {traceback_str}")
 			
 
 		#pprint(name_list)
@@ -953,8 +962,12 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 					item_list[5] = item_list[5].upper().replace("VÄHINTÄÄN", "").strip()
 					
 			if part_type == "mobo":
-				item_list[2] = final_trim(part_type, item_list, 2, ",")
+				item_list[3] = final_trim(part_type, item_list, 3, ",")
 				item_list[0] = final_trim(part_type, item_list, 0, ":")
+				item_list[1] = final_trim(part_type, item_list, 1, "AMD")
+				item_list[1] = final_trim(part_type, item_list, 1, "INTEL")
+				item_list[3] = final_trim(part_type, item_list, 3, "MUISTIARKITEKTUURI")
+				item_list[3] = final_trim(part_type, item_list, 3, "-")
 			elif part_type == "cpu":
 				item_list[0] = final_trim(part_type, item_list, 0, "-YDIN")
 				item_list[0] = final_trim(part_type, item_list, 0, "-YTIMINEN")
