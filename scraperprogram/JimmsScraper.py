@@ -307,7 +307,7 @@ def process_url(curr_url, all_product_links, lock):
 		
 		# Get the actual link for each item
 		for item in product_name:
-			if "TARJOUS" not in item.text.upper() and "BUNDLE" not in item.text.upper() and "OUTLET" not in item.text.upper():
+			if not any(s in item.text.upper() for s in ["TARJOUS", "BUNDLE", "OUTLET", "B-STOCK", "BSTOCK"]):
 				lock.acquire()
 				product_link = item.find("a", href=True)
 				get_link = product_link.get("href")
