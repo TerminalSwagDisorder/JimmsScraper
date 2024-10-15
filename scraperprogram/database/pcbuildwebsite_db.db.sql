@@ -1,9 +1,9 @@
-BEGIN TRANSACTION;
+START TRANSACTION;
 DROP TABLE IF EXISTS `chassis`;
 CREATE TABLE IF NOT EXISTS `chassis` (
-	`ID`	INTEGER NOT NULL UNIQUE,
+	`ID`	INT(11) NOT NULL UNIQUE AUTO_INCREMENT,
 	`Url`	TEXT,
-	`Price`	REAL,
+	`Price`	DECIMAL(10,2),
 	`Name`	TEXT,
 	`Manufacturer`	TEXT,
 	`Image`	TEXT,
@@ -12,13 +12,13 @@ CREATE TABLE IF NOT EXISTS `chassis` (
 	`Dimensions`	TEXT,
 	`Color`	TEXT,
 	`Compatibility`	TEXT,
-	PRIMARY KEY(`ID` AUTOINCREMENT)
+	PRIMARY KEY(`ID`)
 );
 DROP TABLE IF EXISTS `cpu`;
 CREATE TABLE IF NOT EXISTS `cpu` (
-	`ID`	INTEGER NOT NULL UNIQUE,
+	`ID`	INT(11) NOT NULL UNIQUE AUTO_INCREMENT,
 	`Url`	TEXT,
-	`Price`	REAL,
+	`Price`	DECIMAL(10,2),
 	`Name`	TEXT,
 	`Manufacturer`	TEXT,
 	`Image`	TEXT,
@@ -31,13 +31,13 @@ CREATE TABLE IF NOT EXISTS `cpu` (
 	`Cpu_Cooler`	TEXT,
 	`TDP`	TEXT,
 	`Integrated_GPU`	TEXT,
-	PRIMARY KEY(`ID` AUTOINCREMENT)
+	PRIMARY KEY(`ID`)
 );
 DROP TABLE IF EXISTS `cpu_cooler`;
 CREATE TABLE IF NOT EXISTS `cpu_cooler` (
-	`ID`	INTEGER NOT NULL UNIQUE,
+	`ID`	INT(11) NOT NULL UNIQUE AUTO_INCREMENT,
 	`Url`	TEXT,
-	`Price`	REAL,
+	`Price`	DECIMAL(10,2),
 	`Name`	TEXT,
 	`Manufacturer`	TEXT,
 	`Image`	TEXT,
@@ -47,13 +47,13 @@ CREATE TABLE IF NOT EXISTS `cpu_cooler` (
 	`Fan_RPM`	TEXT,
 	`Noise_Level`	TEXT,
 	`Dimensions`	TEXT,
-	PRIMARY KEY(`ID` AUTOINCREMENT)
+	PRIMARY KEY(`ID`)
 );
 DROP TABLE IF EXISTS `gpu`;
 CREATE TABLE IF NOT EXISTS `gpu` (
-	`ID`	INTEGER NOT NULL UNIQUE,
+	`ID`	INT(11) NOT NULL UNIQUE AUTO_INCREMENT,
 	`Url`	TEXT,
-	`Price`	REAL,
+	`Price`	DECIMAL(10,2),
 	`Name`	TEXT,
 	`Manufacturer`	TEXT,
 	`Image`	TEXT,
@@ -64,13 +64,13 @@ CREATE TABLE IF NOT EXISTS `gpu` (
 	`Interface`	TEXT,
 	`Dimensions`	TEXT,
 	`TDP`	TEXT,
-	PRIMARY KEY(`ID` AUTOINCREMENT)
+	PRIMARY KEY(`ID`)
 );
 DROP TABLE IF EXISTS `memory`;
 CREATE TABLE IF NOT EXISTS `memory` (
-	`ID`	INTEGER NOT NULL UNIQUE,
+	`ID`	INT(11) NOT NULL UNIQUE AUTO_INCREMENT,
 	`Url`	TEXT,
-	`Price`	REAL,
+	`Price`	DECIMAL(10,2),
 	`Name`	TEXT,
 	`Manufacturer`	TEXT,
 	`Image`	TEXT,
@@ -79,13 +79,13 @@ CREATE TABLE IF NOT EXISTS `memory` (
 	`Amount`	TEXT,
 	`Speed`	TEXT,
 	`Latency`	TEXT,
-	PRIMARY KEY(`ID` AUTOINCREMENT)
+	PRIMARY KEY(`ID`)
 );
 DROP TABLE IF EXISTS `motherboard`;
 CREATE TABLE IF NOT EXISTS `motherboard` (
-	`ID`	INTEGER NOT NULL UNIQUE,
+	`ID`	INT(11) NOT NULL UNIQUE AUTO_INCREMENT,
 	`Url`	TEXT,
-	`Price`	REAL,
+	`Price`	DECIMAL(10,2),
 	`Name`	TEXT,
 	`Manufacturer`	TEXT,
 	`Image`	TEXT,
@@ -94,13 +94,13 @@ CREATE TABLE IF NOT EXISTS `motherboard` (
 	`Cpu_Compatibility`	TEXT,
 	`Form_Factor`	TEXT,
 	`Memory_Compatibility`	TEXT,
-	PRIMARY KEY(`ID` AUTOINCREMENT)
+	PRIMARY KEY(`ID`)
 );
 DROP TABLE IF EXISTS `psu`;
 CREATE TABLE IF NOT EXISTS `psu` (
-	`ID`	INTEGER NOT NULL UNIQUE,
+	`ID`	INT(11) NOT NULL UNIQUE AUTO_INCREMENT,
 	`Url`	TEXT,
-	`Price`	REAL,
+	`Price`	DECIMAL(10,2),
 	`Name`	TEXT,
 	`Manufacturer`	TEXT,
 	`Image`	TEXT,
@@ -109,13 +109,13 @@ CREATE TABLE IF NOT EXISTS `psu` (
 	`Efficiency`	TEXT,
 	`Modular`	TEXT,
 	`Dimensions`	TEXT,
-	PRIMARY KEY(`ID` AUTOINCREMENT)
+	PRIMARY KEY(`ID`)
 );
 DROP TABLE IF EXISTS `storage`;
 CREATE TABLE IF NOT EXISTS `storage` (
-	`ID`	INTEGER NOT NULL UNIQUE,
+	`ID`	INT(11) NOT NULL UNIQUE AUTO_INCREMENT,
 	`Url`	TEXT,
-	`Price`	REAL,
+	`Price`	DECIMAL(10,2),
 	`Name`	TEXT,
 	`Manufacturer`	TEXT,
 	`Image`	TEXT,
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS `storage` (
 	`Cache`	TEXT,
 	`Flash`	TEXT,
 	`TBW`	TEXT,
-	PRIMARY KEY(`ID` AUTOINCREMENT)
+	PRIMARY KEY(`ID`)
 );
 INSERT INTO `chassis` (`ID`,`Url`,`Price`,`Name`,`Manufacturer`,`Image`,`Image_Url`,`Chassis_type`,`Dimensions`,`Color`,`Compatibility`) VALUES (1,'https://www.jimms.fi/fi/Product/Show/163341/observatory-lite-mesh/kolink-observatory-lite-mesh-rgb-ikkunallinen-miditornikotelo-musta',63.9,'Observatory lite mesh rgb','Kolink','CHASSIS_392761-ig800gg.jpg','https://ic.jimms.fi/product/6/8/392761-ig800gg.jpg','Atx midi- ja mini-tornikotelot','190 x 440 x 400 mm','Musta','Atx, micro-atx, mini-itx'),
  (2,'https://www.jimms.fi/fi/Product/Show/197139/cc-h61fw-r1/nzxt-h6-flow-rgb-ikkunallinen-miditornikotelo-valkoinen',140.9,'H6 flow rgb','NZXT','CHASSIS_467999-ig800gg.jpg','https://ic.jimms.fi/product/9/0/467999-ig800gg.jpg','Miditorni',NULL,NULL,'Atx, micro-atx, mini-itx'),
