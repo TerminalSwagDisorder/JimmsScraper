@@ -569,6 +569,13 @@ def data_scraper(base_url, all_product_links, engine, session, metadata, CPU, GP
 
 								desc_list[i] = desc_list[i] + desc_list[i+1]
 								del desc_list[i+1]
+
+							if i+1 < len(desc_list) and "MUISTITUKI" in desc_list[i].upper() and ":" not in desc_list[i+1] and any(s in desc_list[i+1].upper() for s in ["DDR"]):
+								if not any(s in desc_list[i].upper() for s in ["DDR"]):
+									desc_list[i] = desc_list[i].split(":", 1)[0] + ":"
+
+								desc_list[i] = desc_list[i] + desc_list[i+1]
+								del desc_list[i+1]
 								
 					except IndexError as e:
 						traceback_str = traceback.format_exc()
